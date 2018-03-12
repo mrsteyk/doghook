@@ -1,7 +1,5 @@
 #include "stdafx.hh"
 
-// Dllmain here
-
 #if doghook_platform_windows()
 
 extern u32 __stdcall doghook_process_attach(void *a);
