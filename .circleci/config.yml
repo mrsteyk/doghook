@@ -15,7 +15,7 @@ jobs:
           name: Generate Make files
           command: |
             ls .
-            ./premake gmake
+            ./premake5 gmake
       - run:
           name: Build
           command: |
