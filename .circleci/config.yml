@@ -14,10 +14,11 @@ jobs:
       - run:
           name: Generate Make files
           command: |
-            premake gmake
+            ./premake gmake
       - run:
           name: Build
           command: |
+            cd premake
             make -j2
       - store_artifacts:
           path: ~/dogbook/bin/Debug/libdoghook.so
