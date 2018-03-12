@@ -6,6 +6,8 @@
 
 extern u32 __stdcall doghook_process_attach(void *a);
 
+u32 __stdcall doghook_process_attach(void *a) { return 0; }
+
 __declspec(dllexport) BOOL APIENTRY DllMain(HMODULE hModule,
                                             DWORD   reason,
                                             LPVOID  lpReserved) {
