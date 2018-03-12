@@ -22,8 +22,9 @@ jobs:
           name: Build
           command: |
             cd premake
-            sudo ln -s /usr/bin/clang-5.0 /usr/bin/clang
-            sudo ln -s /usr/bin/clang++-5.0 /usr/bin/clang++
+            ls /usr/bin/
+            ln -s /usr/bin/clang-5.0 /usr/bin/clang
+            ln -s /usr/bin/clang++-5.0 /usr/bin/clang++
             make -j2
       - store_artifacts:
           path: ~/dogbook/bin/Debug/libdoghook.so
