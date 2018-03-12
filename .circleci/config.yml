@@ -10,7 +10,7 @@ jobs:
           command: |
             apt-get update -qq
             apt-get install -y g++ clang-5.0 cmake git wget ssh patchelf
-      - checkout
+      - checkout:
         post:
           - git submodule sync
           - git submodule update --init
