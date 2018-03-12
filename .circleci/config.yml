@@ -27,5 +27,5 @@ jobs:
             ln -s /usr/bin/clang++-5.0 /usr/bin/clang++
             make -j2
       - store_artifacts:
-          path: ~/dogbook/bin/Debug/libdoghook.so
+          path: ~/doghook/bin/Debug/libdoghook.so
           destination: libdoghook.so
