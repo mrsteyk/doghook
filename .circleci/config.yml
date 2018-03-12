@@ -22,6 +22,8 @@ jobs:
           name: Build
           command: |
             cd premake
+            ls .
+            $CC=clang++-5.0
             make -j2
       - store_artifacts:
           path: ~/dogbook/bin/Debug/libdoghook.so
