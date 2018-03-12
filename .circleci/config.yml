@@ -1,0 +1,24 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/doghook
+    docker:
+      - image: ubuntu:rolling
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update -qq
+            apt-get install -y g++ clang-5.0 cmake git wget ssh patchelf
+      - checkout
+      - run:
+          name: Generate Make files
+          command: |
+            premake gmake
+      - run:
+          name: Build
+          command: |
+            make -j2
+      - store_artifacts:
+          path: ~/dogbook/bin/Debug/libdoghook.so
+          destination: libdoghook.so
