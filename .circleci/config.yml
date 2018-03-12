@@ -24,7 +24,7 @@ jobs:
             cd premake
             ls .
             cat doghook.make
-            CC=clang++-5.0
+            ls /bin/
             make -j2
       - store_artifacts:
           path: ~/dogbook/bin/Debug/libdoghook.so
