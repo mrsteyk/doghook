@@ -9,7 +9,7 @@
 #undef max
 #undef min
 
-namespace Math {
+namespace math {
 constexpr auto PI = 3.14159265358979323846f;
 
 inline auto to_radians(float x) {
@@ -252,8 +252,7 @@ public:
         out.z = data[row][2];
     }
 
-    //
-    auto rotate_vector(const Math::Vector &in) const {
+    auto rotate_vector(const Vector &in) const {
         Vector out;
         Vector row;
 
@@ -350,4 +349,4 @@ inline void matrix_angles(const Matrix3x4 &matrix, Vector &angles, Vector &posit
     matrix_angles(matrix, &angles.x);
 }
 
-} // namespace Math
+} // namespace math

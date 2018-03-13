@@ -7,7 +7,7 @@
 #include "types.hh"
 
 // helpers for calling virtual functions
-namespace VFunc {
+namespace vfunc {
 inline auto get_table(void *inst, u32 offset) -> void ** {
     return *reinterpret_cast<void ***>(reinterpret_cast<u8 *>(inst) + offset);
 }
@@ -54,15 +54,15 @@ public:
         //assert(instance != nullptr);
 
         auto index = 0u;
-        if constexpr (BluePlatform::windows())
+        if constexpr (doghook_platform::windows())
             index = index_windows;
-        else if constexpr (BluePlatform::linux())
+        else if constexpr (doghook_platform::linux())
             index = index_linux;
-        else if constexpr (BluePlatform::osx())
+        else if constexpr (doghook_platform::osx())
             index = index_osx;
 
         auto offset = 0u;
-        if constexpr (BluePlatform::windows()) {
+        if constexpr (doghook_platform::windows()) {
             offset = offset_windows;
 
             this->instance = reinterpret_cast<ObjectType *>(
@@ -79,7 +79,7 @@ public:
     }
 };
 
-} // namespace VFunc
+} // namespace vfunc
 
 // macro for easier definitions of wrapper calls
 // name is the name of the function
@@ -88,4 +88,4 @@ public:
 #define return_virtual_func(name, windows, linux, osx, off, ...) \
     using c = std::remove_reference<decltype(*this)>::type;      \
     using t = decltype(&c::name);                                \
-    return VFunc::Func<t>(this, windows, linux, osx, off).invoke(__VA_ARGS__)
+    return vfunc::Func<t>(this, windows, linux, osx, off).invoke(__VA_ARGS__)

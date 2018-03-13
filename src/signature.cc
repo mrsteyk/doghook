@@ -11,6 +11,8 @@
 #include <unistd.h>
 #endif
 
+using namespace signature;
+
 static constexpr auto in_range(char x, char a, char b) {
     return (x >= a && x <= b);
 }
@@ -53,7 +55,7 @@ static u8 *find_pattern_internal(uptr start, uptr end, const char *pattern) {
 }
 
 static std::pair<uptr, uptr> find_module_code_section(const char *module_name) {
-    auto module = Signature::resolve_library(module_name);
+    auto module = resolve_library(module_name);
 
 #if doghook_platform_windows()
     auto module_addr = reinterpret_cast<uptr>(module);
@@ -113,7 +115,7 @@ static std::pair<uptr, uptr> find_module_code_section(const char *module_name) {
     assert(0);
 }
 
-auto Signature::resolve_library(const char *name) -> void * {
+auto signature::resolve_library(const char *name) -> void * {
 #if doghook_platform_windows()
     // TODO: actually check directories for this dll instead of
     // letting the loader do the work
@@ -162,7 +164,7 @@ auto Signature::resolve_library(const char *name) -> void * {
 
     return nullptr;
 }
-void *Signature::resolve_import(void *handle, const char *name) {
+void *signature::resolve_import(void *handle, const char *name) {
 #if doghook_platform_windows()
     return reinterpret_cast<void *>(GetProcAddress(static_cast<HMODULE>(handle), name));
 #elif doghook_platform_linux()
@@ -172,17 +174,17 @@ void *Signature::resolve_import(void *handle, const char *name) {
 #endif
 }
 
-u8 *Signature::find_pattern(const char *module_name, const char *pattern) {
+u8 *signature::find_pattern(const char *module_name, const char *pattern) {
     auto code_section = find_module_code_section(module_name);
 
     return find_pattern_internal(code_section.first, code_section.second, pattern);
 }
 
-u8 *Signature::find_pattern(const char *pattern, uptr start, uptr length) {
+u8 *signature::find_pattern(const char *pattern, uptr start, uptr length) {
     return find_pattern_internal(start, start + length, pattern);
 }
 
-void *Signature::resolve_callgate(void *address) {
+void *signature::resolve_callgate(void *address) {
     // TODO: are these the only instructions here?
     assert(reinterpret_cast<i8 *>(address)[0] == '\xE8' || reinterpret_cast<i8 *>(address)[0] == '\xE9');
 
