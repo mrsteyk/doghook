@@ -36,10 +36,6 @@ public:
 
         return *this;
     }
-
-    operator Vector() {
-        return *this;
-    }
 };
 
 struct Plane {

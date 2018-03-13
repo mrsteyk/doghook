@@ -68,11 +68,14 @@ public:
     }
 
     auto queued_packets() -> i32 & {
-        static auto queued_packets_offset = []() {
+        // TODO: this should be auto when implemented for all platforms
+        static u32 queued_packets_offset = []() {
             if constexpr (doghook_platform::windows()) {
                 return *signature::find_pattern<u32 *>("engine", "83 BE ? ? ? ? ? 0F 9F C0 84 C0", 2);
             } else if constexpr (doghook_platform::linux()) {
+                return 0;
             } else if constexpr (doghook_platform::osx()) {
+                return 0;
             }
         }();
 
@@ -216,11 +219,14 @@ public:
     Input() = delete;
 
     auto get_user_cmd(u32 sequence_number) -> UserCmd * {
-        static auto array_offset = []() {
+        // Look at above queued_packets_offset for more info
+        static u32 array_offset = []() {
             if constexpr (doghook_platform::windows()) {
                 return *signature::find_pattern<u32 *>("client", "8B 87 ? ? ? ? 8B CA", 2);
             } else if constexpr (doghook_platform::linux()) {
+                return 0;
             } else if constexpr (doghook_platform::osx()) {
+                return 0;
             }
         }();
         // this should not be 0
