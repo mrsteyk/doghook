@@ -4,8 +4,6 @@
 
 extern u32 __stdcall doghook_process_attach(void *a);
 
-u32 __stdcall doghook_process_attach(void *a) { return 0; }
-
 __declspec(dllexport) BOOL APIENTRY DllMain(HMODULE hModule,
                                             DWORD   reason,
                                             LPVOID  lpReserved) {
@@ -18,6 +16,8 @@ __declspec(dllexport) BOOL APIENTRY DllMain(HMODULE hModule,
     return true;
 }
 #else
+// TODO: send process attach over to gamesystem
+
 void __attribute__((constructor)) startup() {}
 
 void __attribute__((destructor)) shutdown() {}

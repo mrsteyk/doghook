@@ -239,6 +239,7 @@ public:
 
     auto get_verified_user_cmd(u32 sequence_number) -> class VerifiedCmd * {
         // 03 B7 ? ? ? ? 8D 04 88
+        return nullptr;
     }
 };
 
