@@ -43,15 +43,15 @@ class ConvarBase {
 
     bool init_complete;
 
-    static auto tf_convar_changed(sdk::IConVar *convar, const char *old_string, float old_float) -> void;
+    static void tf_convar_changed(sdk::IConVar *convar, const char *old_string, float old_float);
 
 public:
     ConvarBase(const char *name, ConvarType type, const ConvarBase *parent);
     virtual ~ConvarBase();
 
     // virtual functions - so you dont have to check type, cast and then call
-    virtual auto from_string(const char *str) -> bool = 0;
-    virtual auto to_string() const -> const char *    = 0;
+    virtual bool        from_string(const char *str) = 0;
+    virtual const char *to_string() const            = 0;
 
     auto name() const { return internal_name; }
     auto type() const { return t; }
@@ -103,13 +103,13 @@ public:
         this->value = value;
     }
 
-    auto from_string(const char *str) -> bool override final {
+    bool from_string(const char *str) override final {
         assert(str);
 
-        if (stricmp(str, "false") == 0) {
+        if (_stricmp(str, "false") == 0) {
             value = false;
             return false;
-        } else if (stricmp(str, "true") == 0) {
+        } else if (_stricmp(str, "true") == 0) {
             value = true;
             return false;
         }
@@ -118,7 +118,7 @@ public:
         return false;
     }
 
-    auto to_string() const -> const char * override final {
+    const char *to_string() const override final {
         return value ? "true" : "false";
     }
 
@@ -152,7 +152,7 @@ public:
         this->max_value = max_value;
     }
 
-    auto from_string(const char *str) -> bool override {
+    bool from_string(const char *str) override {
         assert(str);
 
         auto new_value = atoi(str);
@@ -175,7 +175,7 @@ public:
         return false;
     }
 
-    auto to_string() const -> const char * override {
+    const char *to_string() const override {
         static u32  cur_index = 0;
         static char temp[20][8];
 
@@ -223,7 +223,7 @@ public:
         this->max_value = max_value;
     }
 
-    auto from_string(const char *str) -> bool override {
+    bool from_string(const char *str) override {
         assert(str);
 
         auto new_value = static_cast<float>(atof(str));
@@ -246,7 +246,7 @@ public:
         return false;
     }
 
-    auto to_string() const -> const char * override {
+    const char *to_string() const override {
         static u32  cur_index = 0;
         static char temp[20][8];
 
@@ -292,7 +292,7 @@ public:
         }
     }
 
-    auto from_string(const char *str) -> bool override {
+    bool from_string(const char *str) override {
         if (value != nullptr) delete[] value;
 
         auto size = strlen(str) + 1;
@@ -302,7 +302,7 @@ public:
         return false;
     }
 
-    auto to_string() const -> const char * override {
+    const char *to_string() const override {
         return value;
     }
 };
