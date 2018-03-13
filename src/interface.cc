@@ -3,6 +3,8 @@
 #include "interface.hh"
 #include "signature.hh"
 
+#include "platform.hh"
+
 using InstantiateInterfaceFn = void *(*)();
 
 class InterfaceReg {
@@ -16,14 +18,14 @@ public:
     InterfaceReg *next;
 };
 
-void *InterfaceHelpers::find_interface(const char *module_name, const char *interface_name) {
+void *interface_helpers::find_interface(const char *module_name, const char *interface_name) {
 
     InterfaceReg *interface_reg_head;
 
-    if constexpr (DoghookPlatform::windows()) {
-        interface_reg_head = **Signature::find_pattern<InterfaceReg ***>(module_name, "8B 35 ? ? ? ? 57 85 F6 74 38", 2);
-    } else if constexpr (DoghookPlatform::linux()) {
-    } else if constexpr (DoghookPlatform::osx()) {
+    if constexpr (doghook_platform::windows()) {
+        interface_reg_head = **signature::find_pattern<InterfaceReg ***>(module_name, "8B 35 ? ? ? ? 57 85 F6 74 38", 2);
+    } else if constexpr (doghook_platform::linux()) {
+    } else if constexpr (doghook_platform::osx()) {
     }
 
     assert(interface_reg_head);

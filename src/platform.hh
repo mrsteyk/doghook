@@ -40,7 +40,7 @@
 #endif
 // clang-format on
 
-namespace DoghookPlatform {
+namespace doghook_platform {
 inline constexpr bool windows() { return doghook_platform_windows(); }
 inline constexpr bool linux() { return doghook_platform_linux(); }
 inline constexpr bool osx() { return doghook_platform_osx(); }
@@ -48,7 +48,7 @@ inline constexpr bool osx() { return doghook_platform_osx(); }
 inline constexpr bool msvc() { return doghook_platform_msvc(); }
 inline constexpr bool clang() { return doghook_platform_clang(); }
 inline constexpr bool gcc() { return doghook_platform_gcc(); }
-} // namespace DoghookPlatform
+} // namespace doghook_platform
 
 #include "types.hh"
 
