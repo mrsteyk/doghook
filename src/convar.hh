@@ -1,6 +1,8 @@
 #include "platform.hh"
 
 #include <cfloat>
+#include <climits>
+#include <cstdlib>
 #include <string>
 
 // Using a tagged class system allows us to avoid the overhead
@@ -188,7 +190,7 @@ public:
 #if doghook_platform_windows()
         _itoa_s(value, temp[cur_index], 10);
 #else
-        itoa(value, temp[cur_index], 10);
+        sprintf(temp[cur_index], "%d", value);
 #endif
         return temp[cur_index];
     }
@@ -279,10 +281,11 @@ public:
     Convar(const char *name, const char *value, const ConvarBase *parent) : Convar(name, parent) {
         auto size   = strlen(value) + 1;
         this->value = new char[size];
-        if constexpr (doghook_platform_windows())
-            strcpy_s(this->value, size, value);
-        else if constexpr (doghook_platform_linux())
-            strncpy(this->value, value, size);
+#if doghook_platform_windows()
+        strcpy_s(this->value, size, value);
+#elif doghook_platform_linux()
+        strncpy(this->value, value, size);
+#endif
     }
 
     ~Convar() {
