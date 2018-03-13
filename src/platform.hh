@@ -40,15 +40,15 @@
 #endif
 // clang-format on
 
-namespace DogHookPlatform {
-constexpr bool windows() { return doghook_platform_windows(); }
-constexpr bool linux() { return doghook_platform_linux(); }
-constexpr bool osx() { return doghook_platform_osx(); }
+namespace DoghookPlatform {
+inline constexpr bool windows() { return doghook_platform_windows(); }
+inline constexpr bool linux() { return doghook_platform_linux(); }
+inline constexpr bool osx() { return doghook_platform_osx(); }
 
-constexpr bool msvc() { return doghook_platform_msvc(); }
-constexpr bool clang() { return doghook_platform_clang(); }
-constexpr bool gcc() { return doghook_platform_gcc(); }
-} // namespace DogHookPlatform
+inline constexpr bool msvc() { return doghook_platform_msvc(); }
+inline constexpr bool clang() { return doghook_platform_clang(); }
+inline constexpr bool gcc() { return doghook_platform_gcc(); }
+} // namespace DoghookPlatform
 
 #include "types.hh"
 
