@@ -4,6 +4,7 @@
 #include "log.hh"
 
 #include "class_id.hh"
+#include "convar.hh"
 #include "hooks.hh"
 #include "interface.hh"
 #include "netvar.hh"
@@ -69,17 +70,13 @@ public:
     void process_attach() {
         Log::msg("process_attach()");
 
-        // TODO: should these two be modules??
-
         // make sure that the netvars are initialised
         // becuase their dynamic initialiser could be after the
         // gamesystems one
         sdk::Netvar::init_all();
 
-        // TODO:
-
         // register all convars now that we have the interfaces we need
-        //Convar_Base::init_all();
+        ConvarBase::init_all();
 
         // at this point we are now inited and ready to go!
         inited = true;
@@ -93,8 +90,6 @@ public:
 
         // Make sure that all our class_ids are correct
         // This will only do anything on debug builds and not on release builds.
-
-        // TODO:
 
         // This needs to be done here becuase classids arent initialised before we are in game
         sdk::class_id::internal_checker::ClassIDChecker::check_all_correct();
