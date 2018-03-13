@@ -288,10 +288,13 @@ void ConvarBase::tf_convar_changed(sdk::IConVar *iconvar, const char *old_string
     }
 }
 
-ConvarBase::ConvarBase(const char *name, Convar_Type type, const ConvarBase *parent) : parent(parent), t(type), next(head), init_complete(false) {
+ConvarBase::ConvarBase(const char *name, ConvarType type, const ConvarBase *parent) : parent(parent), t(type), next(head), init_complete(false) {
     head = this;
 
-    strcpy_s(internal_name, name);
+    if constexpr (doghook_platform_windows())
+        strcpy_s(internal_name, name);
+    else if constexpr (doghook_platform_linux())
+        strcpy(internal_name, name);
 
     // Create a tf convar based on this one
     tf_convar = new sdk::ConCommandBase;

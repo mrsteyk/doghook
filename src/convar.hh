@@ -106,10 +106,10 @@ public:
     auto from_string(const char *str) -> bool override final {
         assert(str);
 
-        if (_stricmp(str, "false") == 0) {
+        if (stricmp(str, "false") == 0) {
             value = false;
             return false;
-        } else if (_stricmp(str, "true") == 0) {
+        } else if (stricmp(str, "true") == 0) {
             value = true;
             return false;
         }
@@ -279,7 +279,10 @@ public:
     Convar(const char *name, const char *value, const ConvarBase *parent) : Convar(name, parent) {
         auto size   = strlen(value) + 1;
         this->value = new char[size];
-        strcpy_s(this->value, size, value);
+        if constexpr (doghook_platform_windows())
+            strcpy_s(this->value, size, value);
+        else if constexpr (doghook_platform_linux())
+            strncpy(this->value, value, size);
     }
 
     ~Convar() {
