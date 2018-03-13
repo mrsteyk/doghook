@@ -12,7 +12,7 @@ jobs:
             apt-get install -y build-essential g++ g++-multilib clang-5.0 cmake git wget ssh patchelf
       - checkout
       - run: git submodule sync
-      - run: git submodule update --init
+      - run: git submodule update --init --recursive
       - run:
           name: Generate Make files
           command: |
@@ -22,7 +22,6 @@ jobs:
           name: Build
           command: |
             cd premake
-            ls /usr/bin/
             ln -s /usr/bin/clang-5.0 /usr/bin/clang
             ln -s /usr/bin/clang++-5.0 /usr/bin/clang++
             make -j2
