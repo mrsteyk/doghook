@@ -135,7 +135,7 @@ auto Signature::resolve_library(const char *name) -> void * {
 
         auto dir = readdir(d);
         while (dir != nullptr) {
-            if (dir->d_type == DT_REG && strstr(dir->d_name, to_find) != nullptr && strstr(dir->d_name, ".so") != nullptr) {
+            if (dir->d_type == DT_REG && strstr(dir->d_name, to_find) && strstr(dir->d_name, ".so")) {
                 sprintf(out, "%s/%s", dirname, dir->d_name);
                 return true;
             }
