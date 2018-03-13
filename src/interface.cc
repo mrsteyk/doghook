@@ -23,9 +23,7 @@ void *InterfaceHelpers::find_interface(const char *module_name, const char *inte
     if constexpr (DoghookPlatform::windows()) {
         interface_reg_head = **Signature::find_pattern<InterfaceReg ***>(module_name, "8B 35 ? ? ? ? 57 85 F6 74 38", 2);
     } else if constexpr (DoghookPlatform::linux()) {
-        static_assert(!DoghookPlatform::linux());
     } else if constexpr (DoghookPlatform::osx()) {
-        static_assert(!DoghookPlatform::linux());
     }
 
     assert(interface_reg_head);
