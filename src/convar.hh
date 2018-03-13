@@ -304,7 +304,7 @@ public:
 #if doghook_platform_windows()
         strcpy_s(this->value, size, str);
 #elif doghook_platform_linux()
-        strncpy(this->value, size, str);
+        strncpy(this->value, str, size);
 #endif
 
         return false;
