@@ -34,9 +34,7 @@ auto Player::set_origin(const math::Vector &v) -> void {
         assert(original);
         return original(this, v);
     } else if constexpr (doghook_platform::linux()) {
-        static_assert(doghook_platform::linux() == false);
     } else if constexpr (doghook_platform::osx()) {
-        static_assert(doghook_platform::osx() == false);
     }
 }
 
@@ -50,9 +48,7 @@ auto Player::set_angles(const math::Vector &v) -> void {
         assert(original);
         return original(this, v);
     } else if constexpr (doghook_platform::linux()) {
-        static_assert(doghook_platform::linux() == false);
     } else if constexpr (doghook_platform::osx()) {
-        static_assert(doghook_platform::osx() == false);
     }
 }
 
