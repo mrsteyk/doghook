@@ -1,10 +1,10 @@
 #pragma once
 
-namespace InterfaceHelpers {
+namespace interface_helpers {
 
 // this auto-resolves the library using Signature::
 void *find_interface(const char *module_name, const char *interface_name);
-} // namespace InterfaceHelpers
+} // namespace interface_helpers
 
 template <typename T>
 class Interface {
@@ -16,7 +16,7 @@ public:
     // e.g. "VClient017" -> "VClient"
     static auto set_from_interface(const char *module_name, const char *interface_name) {
         value = static_cast<T *>(
-            InterfaceHelpers::find_interface(module_name, interface_name));
+            interface_helpers::find_interface(module_name, interface_name));
     }
 
     // set from a pointer (you should only do this for non-exported

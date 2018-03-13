@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace Hooks {
+namespace hooks {
 template <typename T, u32 offset>
 class HookInstance {
 
@@ -161,4 +161,4 @@ public:
 template <typename T, u32 offset>
 std::vector<HookInstance<T, offset> *> HookFunction<T, offset>::hooks;
 
-} // namespace Hooks
+} // namespace hooks

@@ -4,7 +4,7 @@
 
 #include "platform.hh"
 
-namespace Signature {
+namespace signature {
 void *resolve_library(const char *name);
 void *resolve_import(void *handle, const char *name);
 
@@ -16,4 +16,4 @@ auto find_pattern(const char *module, const char *pattern, u32 offset) {
     return reinterpret_cast<T>(find_pattern(module, pattern) + offset);
 }
 void *resolve_callgate(void *address);
-} // namespace Signature
+} // namespace signature
