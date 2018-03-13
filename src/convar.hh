@@ -300,7 +300,12 @@ public:
 
         auto size = strlen(str) + 1;
         value     = new char[size];
+
+#if doghook_platform_windows()
         strcpy_s(this->value, size, str);
+#elif doghook_platform_linux()
+        strncpy(this->value, size, str);
+#endif
 
         return false;
     }
