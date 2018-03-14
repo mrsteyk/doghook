@@ -2,6 +2,10 @@
 
 #include "platform.hh"
 
+namespace sdk {
+class Entity;
+}
+
 namespace trace {
 class VectorAligned : public math::Vector {
     float pad;

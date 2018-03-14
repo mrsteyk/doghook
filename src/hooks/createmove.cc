@@ -6,6 +6,8 @@
 #include "sdk/log.hh"
 #include "sdk/player.hh"
 
+#include "modules/aimbot.hh"
+
 using namespace sdk;
 
 namespace create_move {
@@ -51,18 +53,19 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
     auto local_player = Player::local();
     if (local_player == nullptr) return true;
 
-    // TODO: remove
-    Log::msg("tick: %d", user_cmd->tick_count);
-
     // TODO: call original
     // Currently possible but the method is slow
     // Fixme in HookFunction!
 
     // Do create_move_pre_predict()
 
+    aimbot::create_move_pre_predict(user_cmd);
+
     local_player_prediction(local_player, user_cmd);
 
     // Do create_move()
+
+    aimbot::create_move(user_cmd);
 
     return false;
 }
