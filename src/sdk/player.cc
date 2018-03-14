@@ -1,4 +1,4 @@
-#include "stdafx.hh"
+#include "precompiled.hh"
 
 #include "player.hh"
 #include "weapon.hh"

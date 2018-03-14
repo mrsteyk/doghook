@@ -1,18 +1,18 @@
-#include "stdafx.hh"
+#include "precompiled.hh"
 
-#include "gamesystem.hh"
-#include "log.hh"
+#include "sdk/gamesystem.hh"
+#include "sdk/log.hh"
 
-#include "class_id.hh"
-#include "convar.hh"
-#include "hooks.hh"
-#include "interface.hh"
-#include "netvar.hh"
-#include "player.hh"
-#include "sdk.hh"
-#include "vfunc.hh"
+#include "sdk/class_id.hh"
+#include "sdk/convar.hh"
+#include "sdk/hooks.hh"
+#include "sdk/interface.hh"
+#include "sdk/netvar.hh"
+#include "sdk/player.hh"
+#include "sdk/sdk.hh"
+#include "sdk/vfunc.hh"
 
-#include "modules/createmove.hh"
+#include "hooks/createmove.hh"
 
 // Singleton for doing init / deinit of doghook
 // and dealing with hooks from gamesystem

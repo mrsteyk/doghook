@@ -1,4 +1,4 @@
-#include "stdafx.hh"
+#include "precompiled.hh"
 
 #define PLACE_CHECKER
 

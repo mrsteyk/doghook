@@ -1,4 +1,4 @@
-#include "stdafx.hh"
+#include "precompiled.hh"
 
 #include "interface.hh"
 #include "signature.hh"

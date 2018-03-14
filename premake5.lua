@@ -45,13 +45,13 @@ workspace "doghook"
         targetdir "bin/%{cfg.buildcfg}"
 
         filter "system:linux"
-            pchheader "src/stdafx.hh"
+            pchheader "src/precompiled.hh"
         filter "system:windows"
-            pchheader "stdafx.hh"
+            pchheader "precompiled.hh"
         
         filter {}
 
-        pchsource "src/stdafx.cc"
+        pchsource "src/precompiled.cc"
 
 		includedirs { "src" }
         files { "src/**.hh", "src/**.cc" }

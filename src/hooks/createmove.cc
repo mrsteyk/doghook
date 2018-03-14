@@ -1,10 +1,10 @@
-#include <stdafx.hh>
+#include <precompiled.hh>
 
-#include "sdk.hh"
+#include "sdk/sdk.hh"
 
-#include "hooks.hh"
-#include "log.hh"
-#include "player.hh"
+#include "sdk/hooks.hh"
+#include "sdk/log.hh"
+#include "sdk/player.hh"
 
 using namespace sdk;
 

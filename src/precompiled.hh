@@ -1,7 +1,7 @@
 #pragma once
 
-#include "defer.hh"
-#include "platform.hh"
+#include "sdk/defer.hh"
+#include "sdk/platform.hh"
 
 #include <cassert>
 #include <cstdarg>
