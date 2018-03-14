@@ -12,6 +12,8 @@
 #include "sdk.hh"
 #include "vfunc.hh"
 
+#include "modules/createmove.hh"
+
 // Singleton for doing init / deinit of doghook
 // and dealing with hooks from gamesystem
 
@@ -93,10 +95,16 @@ public:
 
         // This needs to be done here becuase classids arent initialised before we are in game
         sdk::class_id::internal_checker::ClassIDChecker::check_all_correct();
+
+        // Do level init here
+        create_move::level_init();
     }
     auto level_shutdown_pre_clear_steam_api_context() -> void override { Log::msg("level_shutdown_pre_clear_steam_api_context"); }
     auto level_shutdown_pre_entity() -> void override {
         Log::msg("level_shutdown_pre_entity");
+
+        // Do level_shutdown here
+        create_move::level_shutdown();
     }
     auto level_shutdown_post_entity() -> void override { Log::msg("level_shutdown_post_entity"); }
 

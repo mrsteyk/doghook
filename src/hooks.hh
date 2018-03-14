@@ -111,6 +111,8 @@ public:
     }
 };
 
+// TODO: needs a windows, linux, osx index number system
+
 template <typename T, u32 offset>
 class HookFunction {
     static std::vector<HookInstance<T, offset> *> hooks;

@@ -54,4 +54,4 @@ workspace "doghook"
         pchsource "src/stdafx.cc"
 
 		includedirs { "src" }
-        files { "src/*.hh", "src/*.cc" }
+        files { "src/**.hh", "src/**.cc" }
