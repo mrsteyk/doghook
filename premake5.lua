@@ -1,4 +1,5 @@
 require("premake_modules/export-compile-commands")
+require("premake_modules/cmake")
 
 workspace "doghook"
     configurations { "Debug", "Release" }
