@@ -25,12 +25,11 @@ namespace aimbot {
 using Target = std::pair<Entity *, math::Vector>;
 
 std::vector<Target> targets;
-u32                 next_index;
+
+bool can_find_targets = false;
 
 Player *local_player;
 Weapon *local_weapon;
-
-bool can_find_targets = false;
 
 int          local_team;
 math::Vector local_view;
@@ -52,9 +51,8 @@ static auto visible_no_entity(const math::Vector &position) {
     return result.fraction == 1.0f;
 }
 
-static auto doghook_aimbot_pedantic_mode = Convar<bool>{"doghook_aimbot_pedantic_mode", true, nullptr};
-
-static auto visible(Entity *e, const math::Vector &position, const int hitbox) {
+static Convar<bool> doghook_aimbot_pedantic_mode{"doghook_aimbot_pedantic_mode", true, nullptr};
+static auto         visible(Entity *e, const math::Vector &position, const int hitbox) {
     trace::TraceResult result;
     trace::Ray         ray;
     trace::Filter      f(local_player);
@@ -72,7 +70,8 @@ static auto visible(Entity *e, const math::Vector &position, const int hitbox) {
     return false;
 }
 
-static auto multipoint_internal(Entity *e, float granularity, const int hitbox, const math::Vector &centre, const math::Vector &min, const math::Vector &max, math::Vector &out) {
+static auto multipoint_internal(Entity *e, float granularity, const int hitbox, const math::Vector &centre,
+                                const math::Vector &min, const math::Vector &max, math::Vector &out) {
     // go from centre to centre min first
     for (float i = 0.0f; i <= 1.0f; i += granularity) {
         math::Vector point = centre.lerp(min, i);
@@ -97,10 +96,10 @@ static auto multipoint_internal(Entity *e, float granularity, const int hitbox, 
 }
 
 // TODO: remove
-static auto doghook_aimbot_multipoint_granularity = Convar<float>{"doghook_aimbot_multipoint_granularity", 0, 0, 10, nullptr};
+static Convar<float> doghook_aimbot_multipoint_granularity{"doghook_aimbot_multipoint_granularity", 0, 0, 10, nullptr};
 
 // TODO: there must be some kind of better conversion we can use here to get a straight line across the hitbox
-static auto multipoint(Player *player, const int hitbox, const math::Vector &centre, const math::Vector &min, const math::Vector &max, math::Vector &position_out) -> bool {
+static auto multipoint(Player *player, const int hitbox, const math::Vector &centre, const math::Vector &min, const math::Vector &max, math::Vector &position_out) {
     // create a divisor out of the granularity
     float divisor = doghook_aimbot_multipoint_granularity;
     if (divisor == 0) return false;
@@ -112,13 +111,13 @@ static auto multipoint(Player *player, const int hitbox, const math::Vector &cen
     math::Vector centre_min_x = math::Vector(new_x, min.y, centre.z);
     math::Vector centre_max_x = math::Vector(new_x, max.y, centre.z);
 
-    if (multipoint_internal(player, granularity, hitbox, centre, centre_min_x, centre_max_x, position_out) == true)
+    if (multipoint_internal(player, granularity, hitbox, centre, centre_min_x, centre_max_x, position_out))
         return true;
 
     math::Vector centre_min_y = math::Vector(min.x, math::lerp(0.5, min.y, max.y), centre.z);
     math::Vector centre_max_y = math::Vector(max.x, math::lerp(0.5, min.y, max.y), centre.z);
 
-    if (multipoint_internal(player, granularity, hitbox, centre, centre_min_y, centre_max_y, position_out) == true)
+    if (multipoint_internal(player, granularity, hitbox, centre, centre_min_y, centre_max_y, position_out))
         return true;
 
     return false;
@@ -136,9 +135,9 @@ static auto find_best_box() {
     }
 }
 
-static auto doghook_aimbot_enable_backtrack = Convar<bool>{"doghook_aimbot_enable_backtrack", true, nullptr};
+static Convar<bool> doghook_aimbot_enable_backtrack{"doghook_aimbot_enable_backtrack", true, nullptr};
 
-auto visible_target(Entity *e, math::Vector &pos, bool &visible) {
+auto visible_target(Entity *e, math::Vector &pos) {
     // TODO: should entity have a to_player_nocheck() method
     // as we already know at this point that this is a player...
     auto player = e->to_player();
@@ -162,30 +161,26 @@ auto visible_target(Entity *e, math::Vector &pos, bool &visible) {
     auto best_box = find_best_box();
 
     // check best hitbox first
-    if (aimbot::visible(e, hitboxes.centre[best_box.first], best_box.first)) {
-        pos     = hitboxes.centre[best_box.first];
-        visible = true;
-        return;
+    if (visible(e, hitboxes.centre[best_box.first], best_box.first)) {
+        pos = hitboxes.centre[best_box.first];
+        return true;
     } else if (multipoint(player, best_box.first, hitboxes.centre[best_box.first], hitboxes.min[best_box.first], hitboxes.max[best_box.first], pos)) {
-        visible = true;
-        return;
+        return true;
     }
 
     // .second is whether we should only check the best box
     if (best_box.second != true) {
         for (u32 i = 0; i < hitboxes_count; i++) {
-            if (aimbot::visible(e, hitboxes.centre[i], i)) {
-                pos     = hitboxes.centre[i];
-                visible = true;
-                return;
+            if (visible(e, hitboxes.centre[i], i)) {
+                pos = hitboxes.centre[i];
+                return true;
             }
         }
 
         // Perform multiboxing after confirming that we do not have any other options
         for (u32 i = 0; i < hitboxes_count; i++) {
             if (multipoint(player, i, hitboxes.centre[i], hitboxes.min[i], hitboxes.max[i], std::ref(pos))) {
-                visible = true;
-                return;
+                return true;
             }
         }
     }
@@ -203,44 +198,18 @@ auto visible_target(Entity *e, math::Vector &pos, bool &visible) {
     // } while (success == false && delta < Backtrack::max_ticks);
     //}
 
-    visible = false;
-    return;
+    return false;
 }
 
-auto valid_target(Entity *e, bool &valid) {
-    if (can_find_targets == false) {
-        valid = false;
-        return;
-    }
-
+auto valid_target(Entity *e) {
     if (auto player = e->to_player()) {
-        if (player->alive() == false) return;
-        if (local_team == player->team()) return;
+        if (!player->alive()) return false;
+        if (local_team == player->team()) return false;
 
-        valid = true;
+        return true;
     }
 
-    return;
-}
-
-auto flush_targets() {
-    next_index = 0;
-
-    // deal with some local data that we want to keep around
-    local_player = Player::local();
-    assert(local_player);
-
-    local_weapon = local_player->active_weapon()->to_weapon();
-
-    local_team = local_player->team();
-    local_view = local_player->view_position();
-
-    // If we dont have the necessary information (we havent spawned yet or are dead)
-    // then do not attempt to find targets.
-    can_find_targets = local_weapon != nullptr;
-
-    targets.clear();
-    targets.resize(IFace<EntList>()->max_entity_index());
+    return false;
 }
 
 auto finished_target(Target t) -> void {
@@ -248,12 +217,10 @@ auto finished_target(Target t) -> void {
 
     IFace<DebugOverlay>()->add_entity_text_overlay(t.first->index(), 2, 0, 255, 255, 255, 255, "finished");
 
-    targets[next_index] = t;
-
-    next_index += 1;
+    targets.push_back(t);
 }
 
-void sort_targets() {
+auto sort_targets() {
     std::sort(targets.begin(), targets.end(),
               [](const Target &a, const Target &b) {
                   // Ignore null targets (artifact of having a resized vector mess
@@ -262,6 +229,25 @@ void sort_targets() {
 
                   return a.second.distance(local_view) < b.second.distance(local_view);
               });
+}
+
+auto find_targets() {
+    if (can_find_targets == false) return;
+
+    // find targets
+    // TODO: clean up this mess
+    for (auto e : IFace<EntList>()->get_range()) {
+        if (!e->is_valid()) continue;
+        if (e->dormant()) continue;
+
+        if (valid_target(e)) {
+            auto pos        = math::Vector::invalid();
+            if (visible_target(e, pos)) {
+                finished_target(Target{e, pos});
+            }
+        }
+    }
+    sort_targets();
 }
 
 // TODO: move this outside of aimbot
@@ -301,7 +287,7 @@ static auto try_autoshoot(sdk::UserCmd *cmd) {
     auto autoshoot_allowed = false;
 
     // Only allow autoshoot when we are zoomed and can get headshots
-    if (local_weapon->client_class()->class_id == sdk::class_id::CTFSniperRifle && (local_player->cond() & 2)) {
+    if (local_weapon->client_class()->class_id == class_id::CTFSniperRifle && (local_player->cond() & 2)) {
         if ((local_player->tick_base() * IFace<Globals>()->interval_per_tick - local_player->fov_time()) >= 0.2)
             autoshoot_allowed = true;
     }
@@ -309,35 +295,15 @@ static auto try_autoshoot(sdk::UserCmd *cmd) {
     if (autoshoot_allowed) cmd->buttons |= 1;
 }
 
-static auto doghook_aimbot_silent                       = Convar<bool>{"doghook_aimbot_silent", true, nullptr};
-static auto doghook_aimbot_autoshoot                    = Convar<bool>{"doghook_aimbot_autoshoot", true, nullptr};
-static auto doghook_aimbot_aim_if_not_attack            = Convar<bool>{"doghook_aimbot_aim_if_not_attack", true, nullptr};
-static auto doghook_aimbot_disallow_attack_if_no_target = Convar<bool>{"doghook_aimbot_disallow_attack_if_no_target", false, nullptr};
+static Convar<bool> doghook_aimbot_silent                       = Convar<bool>{"doghook_aimbot_silent", true, nullptr};
+static Convar<bool> doghook_aimbot_autoshoot                    = Convar<bool>{"doghook_aimbot_autoshoot", true, nullptr};
+static Convar<bool> doghook_aimbot_aim_if_not_attack            = Convar<bool>{"doghook_aimbot_aim_if_not_attack", true, nullptr};
+static Convar<bool> doghook_aimbot_disallow_attack_if_no_target = Convar<bool>{"doghook_aimbot_disallow_attack_if_no_target", false, nullptr};
 
 void create_move(sdk::UserCmd *cmd) {
-
-    flush_targets();
-
     if (local_weapon == nullptr) return;
 
-    // find targets
-    // TODO: clean up this mess
-    for (auto e : IFace<EntList>()->get_range()) {
-        if (e->is_valid() == false) continue;
-        if (e->dormant() == true) continue;
-
-        auto is_valid = false;
-        aimbot::valid_target(e, is_valid);
-
-        if (is_valid) {
-            auto is_visible = false;
-            auto pos        = math::Vector::invalid();
-            aimbot::visible_target(e, pos, is_visible);
-
-            if (is_visible) aimbot::finished_target(Target{e, pos});
-        }
-    }
-    aimbot::sort_targets();
+    find_targets();
 
     if (doghook_aimbot_aim_if_not_attack != true) {
         // check if we are IN_ATTACK
@@ -371,5 +337,20 @@ void create_move(sdk::UserCmd *cmd) {
 }
 
 void create_move_pre_predict(sdk::UserCmd *cmd) {
+    // deal with some local data that we want to keep around
+    local_player = Player::local();
+    assert(local_player);
+
+    local_weapon = local_player->active_weapon()->to_weapon();
+
+    local_team = local_player->team();
+    local_view = local_player->view_position();
+
+    // If we dont have the necessary information (we havent spawned yet or are dead)
+    // then do not attempt to find targets.
+    can_find_targets = local_weapon != nullptr;
+
+    targets.clear();
+    // TODO: should we reserve here?
 }
 } // namespace aimbot
