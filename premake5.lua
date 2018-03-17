@@ -15,17 +15,20 @@ workspace "doghook"
     filter "platforms:x32"
         architecture "x32"
 
-    filter "configurations:Debug"
+    filter "system:windows"
         cppdialect "C++17"
-    
+    filter "system:linux"
+        buildoptions "-std=c++2a"
+    filter {}
+        
+
+    filter "configurations:Debug"
         defines { "DEBUG", "_DEBUG" }
         optimize "Off"
         symbols "Full"
         runtime "Debug"
 
     filter "configurations:Release"
-        cppdialect "C++17"
-    
         defines { "NDEBUG" }
         optimize "Full"
         symbols "Off"

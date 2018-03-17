@@ -18,11 +18,15 @@ if [ -z "$pid" ]; then
 fi
 
 # Get the full path of the .so that we'll be faking
-victim_lib=$(cat /proc/${pid}/maps | grep /usr/lib32/ | shuf -n 1)
+victim_lib=$(cat /proc/${pid}/maps | grep ".so" | shuf -n 1)
+
+echo $victim_lib
+
 victim_lib=${victim_lib##* }
 
 # Some magic that I copied straight from StackOverflow
 victim_lib_array=(${victim_lib//./ })
+
 number_to_spoof=${victim_lib_array[-1]}
 library_path=$(IFS=. ; echo "${victim_lib_array[*]}")
 
@@ -66,8 +70,7 @@ sudo killall -19 steam
 sudo killall -19 steamwebhelper
 
 # Uses dlmopen instead of normal dlopen - Credit to LWSS
-input="$(
-sudo gdb -n -q -batch \
+sudo gdb -n \
   -ex "set logging on" \
   -ex "set logging file /dev/null" \
   -ex "attach $pid" \
@@ -82,9 +85,7 @@ sudo gdb -n -q -batch \
   -ex "call \$dlmopen(0, \"$library_path\", 1)" \
   -ex "set \$error = call dlerror()" \
   -ex "x/s \$error" \
-  -ex "detach" \
-  -ex "quit"
-)"
+  -ex "catch syscall exit exit_group"
 
 # Resume Steam
 sleep 1

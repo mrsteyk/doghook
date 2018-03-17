@@ -611,3 +611,6 @@ bin/
 *.vcxproj
 *.sln
 premake/
+gdb.txt
+core
+

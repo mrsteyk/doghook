@@ -149,7 +149,9 @@ static auto player_anim_layer_vector(Player *p) -> UtlVector<AnimationLayer> & {
         UtlVector<AnimationLayer> *anim_overlays = reinterpret_cast<UtlVector<AnimationLayer> *>(p + 2216);
         return *anim_overlays;
     } else if constexpr (doghook_platform::linux()) {
+        assert(0);
     } else if constexpr (doghook_platform::osx()) {
+        assert(0);
     }
 }
 
