@@ -70,7 +70,7 @@ sudo killall -19 steam
 sudo killall -19 steamwebhelper
 
 # Uses dlmopen instead of normal dlopen - Credit to LWSS
-sudo gdb -n -batch \
+sudo gdb -n \
   -ex "set logging on" \
   -ex "set logging file /dev/null" \
   -ex "attach $pid" \
@@ -84,12 +84,7 @@ sudo gdb -n -batch \
   -ex "p \$linkMapID" \
   -ex "call \$dlmopen(0, \"$library_path\", 1)" \
   -ex "set \$error = call dlerror()" \
-  -ex "x/s \$error" \
-  -ex "catch syscall exit exit_group" \
-  -ex "continue" \
-  -ex "backtrace" \
-  -ex "detach" \
-  -ex "quit"
+  -ex "x/s \$error"
 
 # Resume Steam
 sleep 1

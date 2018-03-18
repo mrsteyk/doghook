@@ -39,7 +39,7 @@ public:
 };
 
 template <typename T>
-T *Interface<T>::value;
+T *Interface<T>::value = nullptr;
 
 template <typename T>
 using IFace = Interface<T>;

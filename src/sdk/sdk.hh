@@ -154,15 +154,19 @@ public:
     EntList() = delete;
 
     auto entity(u32 index) -> Entity * {
-        return_virtual_func(entity, 3, 0, 0, 0, index);
+        return_virtual_func(entity, 3, 3, 3, 0, index);
     }
 
     auto from_handle(EntityHandle h) -> Entity * {
-        return_virtual_func(from_handle, 4, 4, 4, 0, h);
+
+        if constexpr (doghook_platform::windows()) {
+            return_virtual_func(from_handle, 4, 4, 4, 0, h);
+        } else if constexpr (doghook_platform::linux())
+            return entity(h.serial_index & 0xFFF);
     }
 
     auto max_entity_index() -> u32 {
-        return_virtual_func(max_entity_index, 6, 0, 0, 0);
+        return_virtual_func(max_entity_index, 6, 6, 6, 0);
     }
 
     class EntityRange {
@@ -365,11 +369,11 @@ public:
     ModelInfo() = delete;
 
     auto model_name(const ModelHandle *m) -> const char * {
-        return_virtual_func(model_name, 3, 0, 0, 0, m);
+        return_virtual_func(model_name, 3, 4, 4, 0, m);
     }
 
     auto studio_model(const ModelHandle *m) -> const StudioModel * {
-        return_virtual_func(studio_model, 28, 0, 0, 0, m);
+        return_virtual_func(studio_model, 28, 29, 29, 0, m);
     }
 };
 
@@ -416,17 +420,17 @@ class MoveHelper;
 class Prediction {
 public:
     auto setup_move(Player *player, UserCmd *ucmd, MoveHelper *helper, void *move) -> void {
-        return_virtual_func(setup_move, 18, 18, 18, 0, player, ucmd, helper, move);
+        return_virtual_func(setup_move, 18, 19, 19, 0, player, ucmd, helper, move);
     }
     void finish_move(Player *player, UserCmd *ucmd, void *move) {
-        return_virtual_func(finish_move, 19, 19, 19, 0, player, ucmd, move);
+        return_virtual_func(finish_move, 19, 20, 20, 0, player, ucmd, move);
     }
 };
 
 class GameMovement {
 public:
     void process_movement(Player *player, void *move) {
-        return_virtual_func(process_movement, 1, 1, 1, 0, player, move);
+        return_virtual_func(process_movement, 1, 2, 2, 0, player, move);
     }
 };
 

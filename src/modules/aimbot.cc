@@ -241,7 +241,7 @@ auto find_targets() {
         if (e->dormant()) continue;
 
         if (valid_target(e)) {
-            auto pos        = math::Vector::invalid();
+            auto pos = math::Vector::invalid();
             if (visible_target(e, pos)) {
                 finished_target(Target{e, pos});
             }
@@ -301,7 +301,7 @@ static Convar<bool> doghook_aimbot_aim_if_not_attack            = Convar<bool>{"
 static Convar<bool> doghook_aimbot_disallow_attack_if_no_target = Convar<bool>{"doghook_aimbot_disallow_attack_if_no_target", false, nullptr};
 
 void create_move(sdk::UserCmd *cmd) {
-    if (local_weapon == nullptr) return;
+    if (local_weapon == nullptr || !can_find_targets) return;
 
     find_targets();
 
@@ -340,6 +340,11 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
     // deal with some local data that we want to keep around
     local_player = Player::local();
     assert(local_player);
+
+    if (local_player->alive() == false) {
+        can_find_targets = false;
+        return;
+    }
 
     local_weapon = local_player->active_weapon()->to_weapon();
 

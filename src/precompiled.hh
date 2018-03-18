@@ -10,5 +10,6 @@
 
 #include <algorithm>
 #include <array>
+#include <thread>
 #include <utility>
 #include <vector>

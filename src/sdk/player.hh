@@ -52,7 +52,7 @@ public:
 
     auto tf_class() -> int;
 
-    auto tick_base() -> int;
+    auto tick_base() -> int &;
     auto sim_time() -> float &;
     auto anim_time() -> float &;
     auto cycle() -> float &;

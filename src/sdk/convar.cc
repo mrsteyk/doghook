@@ -9,6 +9,9 @@
 // implementation of a source convar
 namespace sdk {
 
+// Helper to prevent crashes if Cvar isnt initied properly yet
+bool can_init_convars_at_construction_time = false;
+
 class IConVar;
 
 using ChangeCallbackFn = void (*)(IConVar *, const char *, float);
@@ -33,7 +36,9 @@ public:
     virtual const char *get_name() const { return name; }
     virtual const char *get_help_text() const { return help_string; }
 
-    virtual bool is_registered() const { return registered; }
+    virtual bool is_registered() const {
+        return registered;
+    }
 
     virtual int get_dll_identifier() const {
         if (dll_identifier == -1) dll_identifier = IFace<Cvar>()->allocate_dll_identifier();
@@ -55,7 +60,7 @@ public:
 
         // We might not have Cvar here (global variables)
 
-        if (auto cvar = IFace<Cvar>()) {
+        if (auto cvar = IFace<Cvar>() && can_init_convars_at_construction_time) {
             IFace<Cvar>()->register_command(this);
         }
     }
@@ -158,12 +163,19 @@ public:
     static auto to_iconvar(ConCommandBase *b) { return reinterpret_cast<IConVar *>(reinterpret_cast<u8 *>(b) + 24); }
     auto        to_iconvar() -> IConVar * { return ConCommandBase::to_iconvar(this); }
 
+#if doghook_platform_windows()
 #define DEFINE_THUNK(type, name, real_name)                        \
     static void __fastcall name(IConVar *ecx, void *edx, type v) { \
         auto *real = ConCommandBase::from_iconvar(ecx);            \
         real->real_name(v);                                        \
     }
-
+#elif doghook_platform_linux()
+#define DEFINE_THUNK(type, name, real_name)             \
+    static void name(IConVar *ecx, type v) {            \
+        auto *real = ConCommandBase::from_iconvar(ecx); \
+        real->real_name(v);                             \
+    }
+#endif
     DEFINE_THUNK(const char *, set_value_string_thunk, set_value);
     DEFINE_THUNK(float, set_value_float_thunk, set_value);
     DEFINE_THUNK(int, set_value_int_thunk, set_value);
@@ -233,7 +245,7 @@ public:
 
     // Convar is an mi class and therefore needs this
     // TODO: is this windows only - what is the linux equivilent??
-    void *convar_vtable;
+    void *convar_vtable; // Should be at 0x24
 
     // Convar members
     ConCommandBase *parent;
@@ -316,6 +328,8 @@ ConvarBase::~ConvarBase() {
 
 void ConvarBase::init_all() {
     assert(IFace<sdk::Cvar>());
+
+    sdk::can_init_convars_at_construction_time = true;
 
     // We have to do this goofy loop here as register_command() will
     // change the `next` pointer to the next in its chain

@@ -7,6 +7,8 @@
 #include <utility>
 #include <vector>
 
+// TODO: in all of these cases shouldnt offset be in terms of bytes instead of dwords???
+
 namespace hooks {
 template <typename T, u32 offset>
 class HookInstance {
@@ -42,7 +44,6 @@ class HookInstance {
 
 public:
     HookInstance(T *instance) : instance(instance) {
-
         assert(instance);
 
         original_table = get_table();
@@ -127,7 +128,7 @@ class HookFunction {
     u32 index;
 
 public:
-    HookFunction(T *instance, u32 index, void *f) {
+    HookFunction(T *instance, u32 index_windows, u32 index_linux, u32 index_osx, void *f) {
         assert(instance);
         HookInstance<T, offset> *val = nullptr;
 
@@ -137,6 +138,13 @@ public:
                 break;
             }
         }
+
+        // TODO: osx
+        u32 index;
+        if constexpr (doghook_platform::windows())
+            index = index_windows;
+        else if constexpr (doghook_platform::linux())
+            index = index_linux;
 
         if (val == nullptr) {
             // we havent hooked this instance yet, so do that now

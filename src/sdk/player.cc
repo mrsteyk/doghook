@@ -25,7 +25,7 @@ auto        Player::alive() -> bool {
 }
 
 auto Player::origin() -> math::Vector & {
-    return_virtual_func(origin, 9, 0, 0, 0);
+    return_virtual_func(origin, 9, 11, 11, 0);
 }
 
 auto Player::set_origin(const math::Vector &v) -> void {
@@ -39,7 +39,7 @@ auto Player::set_origin(const math::Vector &v) -> void {
 }
 
 auto Player::angles() -> math::Vector & {
-    return_virtual_func(angles, 10, 0, 0, 0);
+    return_virtual_func(angles, 10, 12, 12, 0);
 }
 
 auto Player::set_angles(const math::Vector &v) -> void {
@@ -63,7 +63,7 @@ auto        Player::cond() -> u32 & {
 }
 
 auto Player::render_bounds() -> std::pair<math::Vector, math::Vector> {
-    auto func = vfunc::Func<void (Player::*)(math::Vector &, math::Vector &)>(this, 20, 0, 0, 4);
+    auto func = vfunc::Func<void (Player::*)(math::Vector &, math::Vector &)>(this, 20, 60, 60, 4);
 
     std::pair<math::Vector, math::Vector> ret;
 
@@ -98,7 +98,7 @@ auto        Player::tf_class() -> int {
 }
 
 static auto tick_base = Netvar("DT_BasePlayer", "localdata", "m_nTickBase");
-auto        Player::tick_base() -> int {
+auto        Player::tick_base() -> int & {
     return ::tick_base.get<int>(this);
 }
 
@@ -189,11 +189,11 @@ auto Player::view_position() -> math::Vector {
 }
 
 auto Player::bone_transforms(math::Matrix3x4 *hitboxes_out, u32 max_bones, u32 bone_mask, float current_time) -> bool {
-    return_virtual_func(bone_transforms, 16, 0, 0, 4, hitboxes_out, max_bones, bone_mask, current_time);
+    return_virtual_func(bone_transforms, 16, 96, 96, 4, hitboxes_out, max_bones, bone_mask, current_time);
 }
 
 auto Player::model_handle() -> const ModelHandle * {
-    return_virtual_func(model_handle, 9, 0, 0, 4);
+    return_virtual_func(model_handle, 9, 55, 55, 4);
 }
 
 auto Player::studio_model() -> const StudioModel * {

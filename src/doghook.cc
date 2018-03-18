@@ -1,5 +1,7 @@
 #include "precompiled.hh"
 
+#include "doghook.hh"
+
 #include "sdk/gamesystem.hh"
 #include "sdk/log.hh"
 
@@ -13,6 +15,8 @@
 #include "sdk/vfunc.hh"
 
 #include "hooks/createmove.hh"
+
+#include "sdk/signature.hh"
 
 // Singleton for doing init / deinit of doghook
 // and dealing with hooks from gamesystem
@@ -39,14 +43,33 @@ public:
         IFace<sdk::Client>().set_from_interface("client", "VClient");
         IFace<sdk::Engine>().set_from_interface("engine", "VEngineClient");
         IFace<sdk::EntList>().set_from_interface("client", "VClientEntityList");
-        IFace<sdk::Input>().set_from_pointer(**reinterpret_cast<sdk::Input ***>(
-            vfunc::get_func<u8 *>(IFace<sdk::Client>().get(), 15, 0) + 0x2));
+
+        if constexpr (doghook_platform::windows())
+            IFace<sdk::Input>().set_from_pointer(**reinterpret_cast<sdk::Input ***>(
+                vfunc::get_func<u8 *>(IFace<sdk::Client>().get(), 15, 0) + 0x2));
+        else if constexpr (doghook_platform::linux())
+            IFace<sdk::Input>().set_from_pointer(**reinterpret_cast<sdk::Input ***>(
+                vfunc::get_func<u8 *>(IFace<sdk::Client>().get(), 15, 0) + 0x1));
+
         IFace<sdk::Cvar>().set_from_interface("vstdlib", "VEngineCvar");
 
-        // TODO linux signatures
-        IFace<sdk::ClientMode>().set_from_pointer(
-            *signature::find_pattern<sdk::ClientMode **>(
-                "client", "B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 83 C4 04 C7 05", 1));
+        if constexpr (doghook_platform::windows())
+            IFace<sdk::ClientMode>().set_from_pointer(
+                *signature::find_pattern<sdk::ClientMode **>(
+                    "client", "B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 83 C4 04 C7 05", 1));
+        else if constexpr (doghook_platform::linux()) {
+            // ClientMode is a magic static. So getting a sig for it is difficult (conflicts with all other magic statics)
+            // So we are going to do some multistage shit in order to retrieve it
+            auto outer_function = signature::find_pattern<void *>("client", "55 89 E5 83 EC 18 E8 ? ? ? ? A3 ? ? ? ? E8", 6);
+            assert(outer_function);
+
+            auto inner_function = static_cast<u8 *>(signature::resolve_callgate(outer_function));
+            assert(outer_function);
+
+            IFace<sdk::ClientMode>().set_from_pointer(*reinterpret_cast<sdk::ClientMode **>(inner_function + 10));
+            assert(IFace<sdk::ClientMode>().get());
+        }
+
         IFace<sdk::ModelInfo>().set_from_interface("engine", "VModelInfoClient");
         IFace<sdk::Trace>().set_from_interface("engine", "EngineTraceClient");
         IFace<sdk::DebugOverlay>().set_from_interface("engine", "VDebugOverlay");
@@ -60,16 +83,31 @@ public:
         if constexpr (doghook_platform::windows()) {
             auto globals_real_address = (u32)*signature::find_pattern<sdk::Globals **>("engine", "A1 ? ? ? ? 8B 11 68", 8);
             IFace<sdk::Globals>().set_from_pointer((sdk::Globals *)globals_real_address);
+        } else if constexpr (doghook_platform::linux()) {
+            auto globals_real_address = (u32) * *signature::find_pattern<sdk::Globals ***>("client", "8B 15 ? ? ? ? F3 0F 10 88 D0 08 00 00", 2);
+
+            IFace<sdk::Globals>().set_from_pointer((sdk::Globals *)globals_real_address);
         }
 
         IFace<sdk::GameMovement>().set_from_interface("client", "GameMovement");
         IFace<sdk::Prediction>().set_from_interface("client", "VClientPrediction");
-        IFace<sdk::MoveHelper>().set_from_pointer(
-            *signature::find_pattern<sdk::MoveHelper **>(
-                "client", "8B 0D ? ? ? ? 8B 01 FF 50 28 56", 2));
+
+        if constexpr (doghook_platform::windows())
+            IFace<sdk::MoveHelper>().set_from_pointer(
+                *signature::find_pattern<sdk::MoveHelper **>(
+                    "client", "8B 0D ? ? ? ? 8B 01 FF 50 28 56", 2));
+        else if constexpr (doghook_platform::linux())
+            IFace<sdk::MoveHelper>().set_from_pointer(nullptr);
+
+        inited = true;
     }
 
     void process_attach() {
+        // Wait for init...
+        while (!inited) {
+            std::this_thread::yield();
+        }
+
         Log::msg("process_attach()");
 
         // make sure that the netvars are initialised
@@ -129,5 +167,9 @@ auto __stdcall doghook_process_attach([[maybe_unused]] void *hmodule) -> u32 {
     doghook.process_attach();
 
     return 0;
+}
+#elif doghook_platform_linux()
+void doghook_process_attach() {
+    doghook.process_attach();
 }
 #endif

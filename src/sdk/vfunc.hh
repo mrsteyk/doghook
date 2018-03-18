@@ -35,7 +35,11 @@ class Func;
 template <typename ObjectType, typename Ret, typename... Args>
 class Func<Ret (ObjectType::*)(Args...)> {
 
+#if doghook_platform_windows()
     using function_type = Ret(__thiscall *)(ObjectType *, Args...);
+#elif doghook_platform_linux()
+    using function_type = Ret (*)(ObjectType *, Args...);
+#endif
     function_type f;
 
     // On windows this will take into account the offset

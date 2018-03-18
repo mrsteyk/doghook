@@ -140,12 +140,12 @@ public:
             else
                 pitch = 90;
         } else {
-            yaw = (atan2(y, x) * 180 / PI);
+            yaw = (to_degrees(atan2(y, x)));
             if (yaw < 0)
                 yaw += 360;
 
             tmp   = sqrt(x * x + y * y);
-            pitch = (atan2(-z, tmp) * 180 / PI);
+            pitch = (to_degrees(atan2(-z, tmp)));
             if (pitch < 0)
                 pitch += 360;
         }
@@ -350,3 +350,5 @@ inline void matrix_angles(const Matrix3x4 &matrix, Vector &angles, Vector &posit
 }
 
 } // namespace math
+
+#define Vector_split_components(v) (v).x, (v).y, (v).z

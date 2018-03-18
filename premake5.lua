@@ -25,7 +25,13 @@ workspace "doghook"
     filter "configurations:Debug"
         defines { "DEBUG", "_DEBUG" }
         optimize "Off"
-        symbols "Full"
+
+        filter "system:windows"
+            symbols "Full"
+        filter "system:linux"
+            symbols "On"
+            buildoptions "-g3"
+        filter ""
         runtime "Debug"
 
     filter "configurations:Release"

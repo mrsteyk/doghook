@@ -8,6 +8,8 @@
 
 #include "modules/aimbot.hh"
 
+#include "utils/math.hh"
+
 using namespace sdk;
 
 namespace create_move {
@@ -28,18 +30,28 @@ static inline auto local_player_prediction(Player *local, UserCmd *cmd) {
     IFace<Globals>()->tickcount = local->tick_base();
 
     // Set the current usercmd and run prediction
-    local->set<UserCmd *, 0x107C>(cmd);
+    if constexpr (doghook_platform::windows())
+        local->set<UserCmd *, 0x107C>(cmd);
+    else if constexpr (doghook_platform::linux())
+        local->set<UserCmd *, 0x105C>(cmd);
 
     IFace<Prediction>()->setup_move(local, cmd, IFace<MoveHelper>().get(), move_data_buffer);
     IFace<GameMovement>()->process_movement(local, move_data_buffer);
     IFace<Prediction>()->finish_move(local, cmd, move_data_buffer);
 
-    local->set<UserCmd *, 0x107C>(0);
+    if constexpr (doghook_platform::windows())
+        local->set<UserCmd *, 0x107C>(0);
+    else if constexpr (doghook_platform::linux())
+        local->set<UserCmd *, 0x105C>(0);
 
     // Cleanup from prediction
     IFace<Globals>()->curtime   = old_cur_time;
     IFace<Globals>()->frametime = old_frame_time;
     IFace<Globals>()->tickcount = old_tick_count;
+
+    // TODO: if you do this then make sure to change the fov time calculation
+    // in aimbot::try_autoshoot!!
+    //local->tick_base() += 1;
 }
 
 hooks::HookFunction<ClientMode, 0> *create_move_hook = nullptr;
@@ -51,14 +63,13 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
 #endif
 {
     auto local_player = Player::local();
-    if (local_player == nullptr) return true;
+    assert(local_player);
 
     // TODO: call original
     // Currently possible but the method is slow
     // Fixme in HookFunction!
 
     // Do create_move_pre_predict()
-
     aimbot::create_move_pre_predict(user_cmd);
 
     local_player_prediction(local_player, user_cmd);
@@ -74,7 +85,7 @@ void level_init() {
     Log::msg("=> Hooking up!");
 
     assert(create_move_hook == nullptr);
-    create_move_hook = new hooks::HookFunction<ClientMode, 0>(IFace<ClientMode>().get(), 21, reinterpret_cast<void *>(&hooked_create_move));
+    create_move_hook = new hooks::HookFunction<ClientMode, 0>(IFace<ClientMode>().get(), 21, 22, 22, reinterpret_cast<void *>(&hooked_create_move));
 }
 
 void level_shutdown() {

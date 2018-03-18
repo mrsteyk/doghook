@@ -11,7 +11,7 @@
 using namespace sdk;
 
 auto Entity::to_handle() -> EntityHandle & {
-    return_virtual_func(to_handle, 2, 0, 0, 0);
+    return_virtual_func(to_handle, 2, 3, 3, 0);
 }
 
 auto Entity::is_valid() -> bool {
@@ -37,13 +37,13 @@ auto Entity::to_weapon() -> class Weapon * {
 }
 
 auto Entity::client_class() -> struct ClientClass * {
-    return_virtual_func(client_class, 2, 0, 0, 8);
+    return_virtual_func(client_class, 2, 17, 17, 8);
 }
 
 auto Entity::dormant() -> bool {
-    return_virtual_func(dormant, 8, 0, 0, 8);
+    return_virtual_func(dormant, 8, 75, 75, 8);
 }
 
 auto Entity::index() -> u32 {
-    return_virtual_func(index, 9, 0, 0, 8);
+    return_virtual_func(index, 9, 79, 79, 8);
 }
