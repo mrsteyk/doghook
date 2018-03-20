@@ -453,4 +453,8 @@ public:
     bool client_blend;
 };
 
+class EngineVgui {
+public:
+};
+
 } // namespace sdk

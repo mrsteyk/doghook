@@ -63,6 +63,7 @@ inline constexpr bool gcc() { return doghook_platform_gcc(); }
 #define __fastcall
 #define __stdcall
 #define __cdecl
+#define __thiscall
 
 // TODO: make a function wrapper please
 #define _stricmp strcasecmp

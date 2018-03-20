@@ -35,12 +35,8 @@ class Func;
 template <typename ObjectType, typename Ret, typename... Args>
 class Func<Ret (ObjectType::*)(Args...)> {
 
-#if doghook_platform_windows()
-    using function_type = Ret(__thiscall *)(ObjectType *, Args...);
-#elif doghook_platform_linux()
-    using function_type = Ret (*)(ObjectType *, Args...);
-#endif
-    function_type f;
+    using FunctionType = Ret(__thiscall *)(ObjectType *, Args...);
+    FunctionType f;
 
     // On windows this will take into account the offset
     // So we do not need to store that seperately
@@ -75,7 +71,7 @@ public:
             this->instance = instance;
         }
 
-        f = get_func<function_type>(instance, index, offset);
+        f = get_func<FunctionType>(instance, index, offset);
     }
 
     auto invoke(Args... args) -> Ret {

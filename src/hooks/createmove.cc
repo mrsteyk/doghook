@@ -65,9 +65,7 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
     auto local_player = Player::local();
     assert(local_player);
 
-    // TODO: call original
-    // Currently possible but the method is slow
-    // Fixme in HookFunction!
+    create_move_hook->call_original<void>(sample_framerate, user_cmd);
 
     // Do create_move_pre_predict()
     aimbot::create_move_pre_predict(user_cmd);

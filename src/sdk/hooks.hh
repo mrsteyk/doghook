@@ -101,10 +101,9 @@ public:
         assert(found);
     }
 
-    template <typename F>
-    auto get_original_function(u32 index) {
+    void *original_function(u32 index) {
         assert(index < count_funcs());
-        return reinterpret_cast<F>(original_table[index]);
+        return reinterpret_cast<void *>(original_table[index]);
     }
 
     auto get_instance() {
@@ -124,8 +123,9 @@ class HookFunction {
         return h;
     }
 
-    T * instance;
-    u32 index;
+    T *   instance;
+    u32   index;
+    void *original_function;
 
 public:
     HookFunction(T *instance, u32 index_windows, u32 index_linux, u32 index_osx, void *f) {
@@ -148,14 +148,17 @@ public:
 
         if (val == nullptr) {
             // we havent hooked this instance yet, so do that now
-            create_hook_instance(instance)->hook_function(index, f);
-            return;
+            val = create_hook_instance(instance);
         }
 
         this->instance = instance;
         this->index    = index;
 
         val->hook_function(index, f);
+
+        // Now that we have hooked this function, retain the original
+        // so that we can quickly reference it in code
+        this->original_function = val->original_function(index);
     }
 
     ~HookFunction() {
@@ -165,6 +168,20 @@ public:
                 return;
             }
         }
+    }
+
+    // Call the original function
+    // Only pass the return value as a template param as the args
+    // will be automatically infered from what you pass to the function
+    template <typename ret, typename... Args>
+    auto call_original(Args... args) {
+#if doghook_platform_linux()
+        using F = ret (*)(T *, Args...);
+#elif doghook_platform_windows()
+        using F = ret(__thiscall *)(T *, Args...);
+#endif
+        auto function = reinterpret_cast<F>(original_function);
+        function(instance, args...);
     }
 };
 

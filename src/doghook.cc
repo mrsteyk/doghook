@@ -7,6 +7,7 @@
 
 #include "sdk/class_id.hh"
 #include "sdk/convar.hh"
+#include "sdk/draw.hh"
 #include "sdk/hooks.hh"
 #include "sdk/interface.hh"
 #include "sdk/netvar.hh"
@@ -15,6 +16,7 @@
 #include "sdk/vfunc.hh"
 
 #include "hooks/createmove.hh"
+#include "hooks/engine_vgui.hh"
 
 #include "sdk/signature.hh"
 
@@ -117,6 +119,10 @@ public:
 
         // register all convars now that we have the interfaces we need
         ConvarBase::init_all();
+
+        // Setup drawing and paint hook
+        sdk::draw::init(sdk::draw::RenderTarget::surface);
+        paint_hook::init_all();
 
         // at this point we are now inited and ready to go!
         inited = true;

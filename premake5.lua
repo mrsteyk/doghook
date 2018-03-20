@@ -63,5 +63,14 @@ workspace "doghook"
 
         pchsource "src/precompiled.cc"
 
-		includedirs { "src" }
+        includedirs { "src" }
         files { "src/**.hh", "src/**.cc" }
+
+        filter "system:linux"
+            postbuildcommands {
+                "{MKDIR} %{wks.location}/compile_commands/",
+                "{TOUCH} %{wks.location}/compile_commands/%{cfg.shortname}.json",
+                "{COPY} %{wks.location}/compile_commands/%{cfg.shortname}.json ../compile_commands.json"
+            }
+        filter {}
+
