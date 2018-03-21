@@ -72,5 +72,10 @@ workspace "doghook"
                 "{TOUCH} %{wks.location}/compile_commands/%{cfg.shortname}.json",
                 "{COPY} %{wks.location}/compile_commands/%{cfg.shortname}.json ../compile_commands.json"
             }
-        filter {}
+        filter "system:windows"
+            postbuildcommands {
+                "cmd.exe /c \"" .. "{MKDIR} %{wks.location}/compile_commands/",
+                "cmd.exe /c \""  .. "{TOUCH} %{wks.location}/compile_commands/%{cfg.shortname}.json",
+                "cmd.exe /c \""  .. "{COPY} %{wks.location}/compile_commands/%{cfg.shortname}.json ../compile_commands.json*"
+            }
 
