@@ -3,7 +3,7 @@
 #include "aimbot.hh"
 
 // TODO:
-//#include "backtrack.hh"
+#include "backtrack.hh"
 
 #include "sdk/class_id.hh"
 #include "sdk/entity.hh"
@@ -146,57 +146,57 @@ auto visible_target(Entity *e, math::Vector &pos) {
     auto           hitboxes_count = player->hitboxes(&hitboxes, false);
 
     // Tell backtrack about these hitboxes
-    //Backtrack::update_player_hitboxes(player, &hitboxes, hitboxes_count);
+    backtrack::update_player_hitboxes(player, hitboxes, hitboxes_count);
 
     auto current_tick = IFace<Globals>()->tickcount;
 
     // TODO: This can probably be expressed much better
     auto delta = 0;
-    //while (delta < Backtrack::max_ticks) {
-    cmd_delta = delta;
+    while (delta < backtrack::max_ticks) {
+        cmd_delta = delta;
 
-    // TODO: there must be a better way to do this...
-    //if (delta > 0) Backtrack::get_hitboxes_for_player_at_tick(player, current_tick - delta, &hitboxes);
+        // TODO: there must be a better way to do this...
+        if (delta > 0) backtrack::hitboxes_for_player(player, current_tick - delta, hitboxes);
 
-    auto best_box = find_best_box();
+        auto best_box = find_best_box();
 
-    // check best hitbox first
-    if (visible(e, hitboxes.centre[best_box.first], best_box.first)) {
-        pos = hitboxes.centre[best_box.first];
-        return true;
-    } else if (multipoint(player, best_box.first, hitboxes.centre[best_box.first], hitboxes.min[best_box.first], hitboxes.max[best_box.first], pos)) {
-        return true;
-    }
+        // check best hitbox first
+        if (visible(e, hitboxes.centre[best_box.first], best_box.first)) {
+            pos = hitboxes.centre[best_box.first];
+            return true;
+        } else if (multipoint(player, best_box.first, hitboxes.centre[best_box.first], hitboxes.min[best_box.first], hitboxes.max[best_box.first], pos)) {
+            return true;
+        }
 
-    // .second is whether we should only check the best box
-    if (best_box.second != true) {
-        for (u32 i = 0; i < hitboxes_count; i++) {
-            if (visible(e, hitboxes.centre[i], i)) {
-                pos = hitboxes.centre[i];
-                return true;
+        // .second is whether we should only check the best box
+        if (best_box.second != true) {
+            for (u32 i = 0; i < hitboxes_count; i++) {
+                if (visible(e, hitboxes.centre[i], i)) {
+                    pos = hitboxes.centre[i];
+                    return true;
+                }
+            }
+
+            // Perform multiboxing after confirming that we do not have any other options
+            for (u32 i = 0; i < hitboxes_count; i++) {
+                if (multipoint(player, i, hitboxes.centre[i], hitboxes.min[i], hitboxes.max[i], std::ref(pos))) {
+                    return true;
+                }
             }
         }
 
-        // Perform multiboxing after confirming that we do not have any other options
-        for (u32 i = 0; i < hitboxes_count; i++) {
-            if (multipoint(player, i, hitboxes.centre[i], hitboxes.min[i], hitboxes.max[i], std::ref(pos))) {
-                return true;
-            }
-        }
+        // If we dont want to do backtracking, escape
+        if (doghook_aimbot_enable_backtrack == false) break;
+
+        // Backtrack to the previous tick
+        // backtrack_player_to_tick will return false if the player is dead at this tick
+        // so we need to keep trying until we hit the max or we find an alive state
+        auto success = false;
+        do {
+            delta += 1;
+            success = backtrack::backtrack_player_to_tick(player, current_tick - delta);
+        } while (success == false && delta < backtrack::max_ticks);
     }
-
-    // If we dont want to do backtracking, escape
-    //if (doghook_aimbot_enable_backtrack == false) break;
-
-    // Backtrack to the previous tick
-    // backtrack_player_to_tick will return false if the player is dead at this tick
-    // so we need to keep trying until we hit the max or we find an alive state
-    // auto success = false;
-    // do {
-    //     delta += 1;
-    //     success = Backtrack::backtrack_player_to_tick(player, current_tick - delta);
-    // } while (success == false && delta < Backtrack::max_ticks);
-    //}
 
     return false;
 }

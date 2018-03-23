@@ -2,6 +2,7 @@
 
 #include "sdk/sdk.hh"
 
+#include "modules/backtrack.hh"
 #include "sdk/hooks.hh"
 #include "sdk/log.hh"
 #include "sdk/player.hh"
@@ -68,13 +69,17 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
     create_move_hook->call_original<void>(sample_framerate, user_cmd);
 
     // Do create_move_pre_predict()
+    backtrack::create_move_pre_predict(user_cmd);
     aimbot::create_move_pre_predict(user_cmd);
 
     local_player_prediction(local_player, user_cmd);
 
     // Do create_move()
 
+    backtrack::create_move(user_cmd);
     aimbot::create_move(user_cmd);
+
+    backtrack::create_move_finish(user_cmd);
 
     return false;
 }
