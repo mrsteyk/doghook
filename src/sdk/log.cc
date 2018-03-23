@@ -3,7 +3,7 @@
 #include "log.hh"
 #include "signature.hh"
 
-auto Log::msg(const char *format, ...) -> void {
+auto logging::msg(const char *format, ...) -> void {
 
     char    buffer[1024];
     va_list vlist;

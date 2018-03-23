@@ -32,13 +32,13 @@ public:
         static bool init_happened = false;
         if (init_happened) return true;
 
-        Log::msg("init()");
+        logging::msg("init()");
         init_happened = true;
         return true;
     }
 
     void post_init() override {
-        Log::msg("post_init()");
+        logging::msg("post_init()");
 
         // Get interfaces here before init_all has a chance to do anything
 
@@ -110,7 +110,7 @@ public:
             std::this_thread::yield();
         }
 
-        Log::msg("process_attach()");
+        logging::msg("process_attach()");
 
         // make sure that the netvars are initialised
         // becuase their dynamic initialiser could be after the
@@ -130,9 +130,9 @@ public:
 
     void shutdown() override {}
 
-    void level_init_pre_entity() override { Log::msg("init_pre_entity()"); }
+    void level_init_pre_entity() override { logging::msg("init_pre_entity()"); }
     void level_init_post_entity() override {
-        Log::msg("level_init_post_entity");
+        logging::msg("level_init_post_entity");
 
         // Make sure that all our class_ids are correct
         // This will only do anything on debug builds and not on release builds.
@@ -143,14 +143,14 @@ public:
         // Do level init here
         create_move::level_init();
     }
-    auto level_shutdown_pre_clear_steam_api_context() -> void override { Log::msg("level_shutdown_pre_clear_steam_api_context"); }
+    auto level_shutdown_pre_clear_steam_api_context() -> void override { logging::msg("level_shutdown_pre_clear_steam_api_context"); }
     auto level_shutdown_pre_entity() -> void override {
-        Log::msg("level_shutdown_pre_entity");
+        logging::msg("level_shutdown_pre_entity");
 
         // Do level_shutdown here
         create_move::level_shutdown();
     }
-    auto level_shutdown_post_entity() -> void override { Log::msg("level_shutdown_post_entity"); }
+    auto level_shutdown_post_entity() -> void override { logging::msg("level_shutdown_post_entity"); }
 
     // update is called from CHLClient_HudUpdate
     // in theory we should be able to render here

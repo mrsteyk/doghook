@@ -295,7 +295,7 @@ void ConvarBase::tf_convar_changed(sdk::IConVar *iconvar, const char *old_string
             if (was_clamped) convar->set_value(modifiable->to_string());
             convar->change_callback = callback_backup;
 
-            Log::msg("Updated convar %s to '%s' (%s)", convar->get_name(), convar->value_string, was_clamped ? "clamped" : "not clamped");
+            logging::msg("Updated convar %s to '%s' (%s)", convar->get_name(), convar->value_string, was_clamped ? "clamped" : "not clamped");
         }
     }
 }

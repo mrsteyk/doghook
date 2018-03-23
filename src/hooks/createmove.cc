@@ -80,14 +80,14 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
 }
 
 void level_init() {
-    Log::msg("=> Hooking up!");
+    logging::msg("=> Hooking up!");
 
     assert(create_move_hook == nullptr);
     create_move_hook = new hooks::HookFunction<ClientMode, 0>(IFace<ClientMode>().get(), 21, 22, 22, reinterpret_cast<void *>(&hooked_create_move));
 }
 
 void level_shutdown() {
-    Log::msg("<= Deleting hooks");
+    logging::msg("<= Deleting hooks");
 
     delete create_move_hook;
     create_move_hook = nullptr;

@@ -60,7 +60,7 @@ uptr Netvar::Tree::find_offset(std::vector<const char *> t) {
 
         if (nodes == old_nodes) {
             // TODO:
-            //Log::msg("[Netvar] Unable to find '%s'", name);
+            //logging::msg("[Netvar] Unable to find '%s'", name);
         }
     }
 

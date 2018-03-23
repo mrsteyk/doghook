@@ -1,5 +1,5 @@
 #pragma once
 
-namespace Log {
+namespace logging {
 void msg(const char *format, ...);
 }

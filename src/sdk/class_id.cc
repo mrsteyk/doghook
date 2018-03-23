@@ -33,12 +33,12 @@ bool internal_checker::ClassIDChecker::check_correct() {
     auto found_value = find_class_id(name);
 
     if (found_value == -1) {
-        Log::msg("[ClassID] Unable to find correct value for '%s'", name);
+        logging::msg("[ClassID] Unable to find correct value for '%s'", name);
         return false;
     }
 
     if (found_value != intended_value) {
-        Log::msg("[ClassID] value for %s is wrong (wanted %d, got %d)", name, intended_value, found_value);
+        logging::msg("[ClassID] value for %s is wrong (wanted %d, got %d)", name, intended_value, found_value);
         return false;
     }
 
