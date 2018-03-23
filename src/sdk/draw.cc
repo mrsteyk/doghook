@@ -73,11 +73,13 @@ void start() {
     assert(is_surface());
     using StartDrawing = void(__thiscall *)(Surface *);
 
+    // look for -pixel_offset_x
+
     static StartDrawing start_drawing = []() -> auto {
         if constexpr (doghook_platform::linux()) {
             return signature::find_pattern<StartDrawing>("vguimatsurface", "55 89 E5 53 81 EC 94 00 00 00", 0);
         } else if constexpr (doghook_platform::windows()) {
-            return nullptr;
+            return signature::find_pattern<StartDrawing>("vguimatsurface", "55 8B EC 64 A1 ? ? ? ? 6A FF 68 ? ? ? ? 50 64 89 25 ? ? ? ? 83 EC 14", 0);
         }
     }
     ();
@@ -94,7 +96,7 @@ void finish() {
         if constexpr (doghook_platform::linux()) {
             return signature::find_pattern<FinishDrawing>("vguimatsurface", "55 89 E5 53 83 EC 24 C7 04 24 00 00 00 00", 0);
         } else if constexpr (doghook_platform::windows()) {
-            return nullptr;
+            return signature::find_pattern<FinishDrawing>("vguimatsurface", "55 8B EC 6A FF 68 ? ? ? ? 64 A1 ? ? ? ? 50 64 89 25 ? ? ? ? 51 56 6A 00", 0);
         }
     }
     ();
