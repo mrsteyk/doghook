@@ -263,6 +263,15 @@ public:
         return out;
     }
 
+    auto vector_transform(const Vector &in) const {
+        Vector column;
+
+        auto out = rotate_vector(in);
+        out += (get_column(3, column), column);
+
+        return out;
+    }
+
     auto from_angle(const Vector &angles) {
         auto radian_pitch = to_radians(angles.x);
         auto radian_yaw   = to_radians(angles.y);
@@ -351,4 +360,4 @@ inline void matrix_angles(const Matrix3x4 &matrix, Vector &angles, Vector &posit
 
 } // namespace math
 
-#define Vector_split_components(v) (v).x, (v).y, (v).z
+#define vector_split_components(v) (v).x, (v).y, (v).z

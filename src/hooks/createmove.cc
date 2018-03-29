@@ -76,8 +76,8 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
 
     // Do create_move()
 
-    backtrack::create_move(user_cmd);
     aimbot::create_move(user_cmd);
+    backtrack::create_move(user_cmd);
 
     backtrack::create_move_finish(user_cmd);
 

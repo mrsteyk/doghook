@@ -203,7 +203,7 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
 #ifdef _DEBUG
         if (layer_count > backtrack_max_anim_layers)
             logging::msg("Not enough space for all layers (has %d, needs %d)",
-                     backtrack_max_anim_layers, layer_count);
+                         backtrack_max_anim_layers, layer_count);
 #endif
 
         auto layer_max = std::min<u32>(backtrack_max_anim_layers, layer_count);
@@ -228,6 +228,7 @@ static math::Vector hullcolor[8] = {
 };
 
 void create_move(sdk::UserCmd *cmd) {
+#ifdef _DEBUG
     for (auto entity : IFace<EntList>()->get_range()) {
         if (entity->is_valid() == false) continue;
         auto player = entity->to_player();
@@ -240,19 +241,21 @@ void create_move(sdk::UserCmd *cmd) {
 
             IFace<DebugOverlay>()->add_text_overlay(record.origin, 0, "%d", record.this_tick);
 
-            if (record.this_tick == cmd->tick_count)
-                for (u32 i = 0; i < record.max_hitboxes; i++) {
-                    auto &hitboxes = record.hitboxes;
+            //if (record.this_tick == cmd->tick_count) {
+            auto &hitboxes = record.hitboxes;
+            for (u32 i = 0; i < record.max_hitboxes; i++) {
 
-                    auto j = (record.this_tick % 8);
-                    auto r = (int)(255.0f * hullcolor[j].x);
-                    auto g = (int)(255.0f * hullcolor[j].y);
-                    auto b = (int)(255.0f * hullcolor[j].z);
+                auto j = (record.this_tick % 8);
+                auto r = (int)(255.0f * hullcolor[j].x);
+                auto g = (int)(255.0f * hullcolor[j].y);
+                auto b = (int)(255.0f * hullcolor[j].z);
 
-                    IFace<DebugOverlay>()->add_box_overlay(hitboxes.origin[i], hitboxes.raw_min[i], hitboxes.raw_max[i], hitboxes.rotation[i], r, g, b, 100, 0);
-                }
+                IFace<DebugOverlay>()->add_box_overlay(hitboxes.origin[i], hitboxes.raw_min[i], hitboxes.raw_max[i], hitboxes.rotation[i], r, g, b, 100, 0);
+            }
+            //}
         }
     }
+#endif
 }
 
 auto create_move_finish(sdk::UserCmd *cmd) -> void {

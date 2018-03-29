@@ -288,8 +288,10 @@ static auto try_autoshoot(sdk::UserCmd *cmd) {
 
     // Only allow autoshoot when we are zoomed and can get headshots
     if (local_weapon->client_class()->class_id == class_id::CTFSniperRifle && (local_player->cond() & 2)) {
-        if ((local_player->tick_base() * IFace<Globals>()->interval_per_tick - local_player->fov_time()) >= 0.2)
-            autoshoot_allowed = true;
+        auto player_time = local_player->tick_base() * IFace<Globals>()->interval_per_tick;
+        auto time_delta  = player_time - local_player->fov_time();
+
+        if (time_delta >= 0.2) autoshoot_allowed = true;
     }
 
     if (autoshoot_allowed) cmd->buttons |= 1;

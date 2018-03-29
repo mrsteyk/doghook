@@ -6,6 +6,7 @@
 #include "netvar.hh"
 #include "vfunc.hh"
 
+#include "log.hh"
 #include "sdk.hh"
 
 using namespace sdk;
@@ -210,6 +211,7 @@ static auto get_hitboxes_internal(Player *player, const StudioModel *model, Play
     auto hitbox_set_ptr = model->hitbox_set(0);
     assert(hitbox_set_ptr);
 
+    // Allow us to use operator[] properly
     auto &hitbox_set = *hitbox_set_ptr;
 
     auto hitboxes_count = std::min(128u, hitbox_set.hitboxes_count);
@@ -221,24 +223,21 @@ static auto get_hitboxes_internal(Player *player, const StudioModel *model, Play
         auto box = hitbox_set[i];
         assert(box);
 
-        math::Vector rotation;
-        math::matrix_angles(bone_to_world[box->bone], rotation, origin);
+        const auto &transform = bone_to_world[box->bone];
 
-        math::Matrix3x4 rotate_matrix;
-        rotate_matrix.from_angle(rotation);
-
-        math::Vector rotated_min, rotated_max;
-
-        rotated_min = rotate_matrix.rotate_vector(box->min);
-        rotated_max = rotate_matrix.rotate_vector(box->max);
+        auto rotated_min = transform.vector_transform(box->min);
+        auto rotated_max = transform.vector_transform(box->max);
 
         centre = rotated_min.lerp(rotated_max, 0.5);
 
-        hitboxes->centre[i] = origin + centre;
-        hitboxes->min[i]    = origin + rotated_min;
-        hitboxes->max[i]    = origin + rotated_max;
+        hitboxes->centre[i] = centre;
+        hitboxes->min[i]    = rotated_min;
+        hitboxes->max[i]    = rotated_max;
 
 #ifdef _DEBUG
+        math::Vector rotation;
+        math::matrix_angles(transform, &rotation.x);
+
         hitboxes->rotation[i] = rotation;
         hitboxes->origin[i]   = origin;
         hitboxes->raw_min[i]  = box->min;
