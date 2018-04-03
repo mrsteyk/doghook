@@ -2,23 +2,25 @@
 
 #include "doghook.hh"
 
-#include "sdk/gamesystem.hh"
-#include "sdk/log.hh"
-
 #include "sdk/class_id.hh"
 #include "sdk/convar.hh"
 #include "sdk/draw.hh"
+#include "sdk/gamesystem.hh"
 #include "sdk/hooks.hh"
 #include "sdk/interface.hh"
+#include "sdk/log.hh"
 #include "sdk/netvar.hh"
 #include "sdk/player.hh"
 #include "sdk/sdk.hh"
+#include "sdk/signature.hh"
 #include "sdk/vfunc.hh"
 
 #include "hooks/createmove.hh"
 #include "hooks/engine_vgui.hh"
 
-#include "sdk/signature.hh"
+#include "modules/esp.hh"
+
+#include "utils/profiler.hh"
 
 // Singleton for doing init / deinit of doghook
 // and dealing with hooks from gamesystem
@@ -100,7 +102,6 @@ public:
                     "client", "8B 0D ? ? ? ? 8B 01 FF 50 28 56", 2));
         else if constexpr (doghook_platform::linux())
             IFace<sdk::MoveHelper>().set_from_pointer(nullptr);
-
         inited = true;
     }
 
@@ -111,6 +112,9 @@ public:
         }
 
         logging::msg("process_attach()");
+
+        // make sure that the profiler is inited first
+        profiler::init();
 
         // make sure that the netvars are initialised
         // becuase their dynamic initialiser could be after the
@@ -143,21 +147,21 @@ public:
         // Do level init here
         create_move::level_init();
     }
-    auto level_shutdown_pre_clear_steam_api_context() -> void override { logging::msg("level_shutdown_pre_clear_steam_api_context"); }
-    auto level_shutdown_pre_entity() -> void override {
+    void level_shutdown_pre_clear_steam_api_context() override { logging::msg("level_shutdown_pre_clear_steam_api_context"); }
+    void level_shutdown_pre_entity() override {
         logging::msg("level_shutdown_pre_entity");
 
         // Do level_shutdown here
         create_move::level_shutdown();
     }
-    auto level_shutdown_post_entity() -> void override { logging::msg("level_shutdown_post_entity"); }
+    void level_shutdown_post_entity() override { logging::msg("level_shutdown_post_entity"); }
 
     // update is called from CHLClient_HudUpdate
     // in theory we should be able to render here
     // and be perfectly ok
     // HOWEVER: it might be better to do this at frame_end()
     void update([[maybe_unused]] float frametime) override {
-        if (inited != true || IFace<sdk::Engine>()->in_game() != true) return;
+        if (inited != true) return;
     }
 
     Doghook() {
@@ -168,7 +172,7 @@ public:
 Doghook doghook;
 
 #if doghook_platform_windows()
-auto __stdcall doghook_process_attach([[maybe_unused]] void *hmodule) -> u32 {
+u32 __stdcall doghook_process_attach([[maybe_unused]] void *hmodule) {
     // TODO: pass module over to the gamesystem
     doghook.process_attach();
 

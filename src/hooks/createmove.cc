@@ -9,7 +9,11 @@
 
 #include "modules/aimbot.hh"
 
+#include "modules/lagexploit.hh"
+
 #include "utils/math.hh"
+
+#include "utils/profiler.hh"
 
 using namespace sdk;
 
@@ -63,24 +67,42 @@ bool __fastcall hooked_create_move(void *instance, void *edx, float sample_frame
 bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cmd)
 #endif
 {
+    profiler_profile_function();
+
     auto local_player = Player::local();
     assert(local_player);
 
     create_move_hook->call_original<void>(sample_framerate, user_cmd);
 
     // Do create_move_pre_predict()
-    backtrack::create_move_pre_predict(user_cmd);
-    aimbot::create_move_pre_predict(user_cmd);
+    {
+        profiler_profile_scope("pre_predict");
 
-    local_player_prediction(local_player, user_cmd);
-
+        {
+            profiler_profile_scope("pre_predict/backtrack");
+            backtrack::create_move_pre_predict(user_cmd);
+        }
+        {
+            profiler_profile_scope("pre_predict/aimbot");
+            aimbot::create_move_pre_predict(user_cmd);
+        }
+    }
+    {
+        profiler_profile_scope("local_player_prediction");
+        local_player_prediction(local_player, user_cmd);
+    }
     // Do create_move()
+    {
+        profiler_profile_scope("create_move");
 
-    aimbot::create_move(user_cmd);
-    backtrack::create_move(user_cmd);
-
-    backtrack::create_move_finish(user_cmd);
-
+        aimbot::create_move(user_cmd);
+        backtrack::create_move(user_cmd);
+		lagexploit::create_move(user_cmd);
+    }
+    {
+        profiler_profile_scope("finish");
+        backtrack::create_move_finish(user_cmd);
+    }
     return false;
 }
 

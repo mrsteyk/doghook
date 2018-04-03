@@ -6,15 +6,17 @@
 
 #include "netvar.hh"
 
+#include "class_id.hh"
+
 #include "sdk.hh"
 
 using namespace sdk;
 
-auto Entity::to_handle() -> EntityHandle & {
+EntityHandle &Entity::to_handle() {
     return_virtual_func(to_handle, 2, 3, 3, 0);
 }
 
-auto Entity::is_valid() -> bool {
+bool Entity::is_valid() {
     // get around clangs "correctly formed code never has a null thisptr"
     auto thisptr = reinterpret_cast<uptr>(this);
     if (thisptr == 0) return false;
@@ -22,28 +24,27 @@ auto Entity::is_valid() -> bool {
     return true;
 }
 
-auto Entity::to_player() -> class Player * {
+class Player *Entity::to_player() {
     auto clientclass = client_class();
 
-    // TODO: do not hardcode this value
-    if (clientclass->class_id == 246) return static_cast<class Player *>(this);
+    if (clientclass->class_id == sdk::class_id::CTFPlayer) return static_cast<class Player *>(this);
 
     return nullptr;
 }
 
-auto Entity::to_weapon() -> class Weapon * {
+class Weapon *Entity::to_weapon() {
     // TODO: checks...
     return static_cast<class Weapon *>(this);
 }
 
-auto Entity::client_class() -> struct ClientClass * {
+struct ClientClass *Entity::client_class() {
     return_virtual_func(client_class, 2, 17, 17, 8);
 }
 
-auto Entity::dormant() -> bool {
+bool Entity::dormant() {
     return_virtual_func(dormant, 8, 75, 75, 8);
 }
 
-auto Entity::index() -> u32 {
+u32 Entity::index() {
     return_virtual_func(index, 9, 79, 79, 8);
 }

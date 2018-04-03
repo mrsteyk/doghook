@@ -44,7 +44,7 @@ class Client {
 public:
     Client() = delete;
 
-    auto get_all_classes() -> ClientClass * {
+    ClientClass *get_all_classes() {
         return_virtual_func(get_all_classes, 8, 8, 8, 0);
     }
 };
@@ -63,11 +63,15 @@ public:
 
     NetChannel() = delete;
 
-    auto get_sequence_number(sdk::NetChannel::Flow f) -> i32 {
-        return_virtual_func(get_sequence_number, 16, 16, 16, 0, f);
+    float latency(Flow f) {
+        return_virtual_func(latency, 9, 9, 9, 0, f);
     }
 
-    auto queued_packets() -> i32 & {
+    i32 sequence_number(Flow f) {
+        return_virtual_func(sequence_number, 16, 16, 16, 0, f);
+    }
+
+    i32 &queued_packets() {
         // TODO: this should be auto when implemented for all platforms
         static u32 queued_packets_offset = []() {
             if constexpr (doghook_platform::windows()) {
@@ -84,6 +88,12 @@ public:
         auto &queued_packets = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(this) + queued_packets_offset);
 
         return queued_packets;
+    }
+
+    i32 &m_nOutSequenceNr() {
+        static u32 m_nOutSequenceNr_offset = 8; // TODO: don't hardcode
+
+        return *(i32 *)((u32)this + m_nOutSequenceNr_offset);
     }
 };
 
@@ -110,42 +120,51 @@ public:
     class CSaveRestoreData *save_data;
 
     bool is_client;
+
+    i32   time_to_ticks(float time);
+    float ticks_to_time(i32 ticks);
 };
+
+struct PlayerInfo;
 
 class Engine {
 public:
     Engine() = delete;
 
-    auto last_timestamp() -> float {
+    float last_timestamp() {
         return_virtual_func(last_timestamp, 15, 15, 15, 0);
     }
 
-    auto time() -> float {
+    float time() {
         return_virtual_func(time, 14, 14, 14, 0);
     }
 
-    auto in_game() -> bool {
+    bool in_game() {
         return_virtual_func(in_game, 26, 26, 26, 0);
     }
 
-    auto local_player_index() -> u32 {
+    u32 local_player_index() {
         return_virtual_func(local_player_index, 12, 12, 12, 0);
     }
 
-    auto net_channel_info() -> NetChannel * {
+    NetChannel *net_channel_info() {
         return_virtual_func(net_channel_info, 72, 72, 72, 0);
     }
 
-    auto is_box_visible(const math::Vector &min, const math::Vector &max) -> bool {
+    bool is_box_visible(const math::Vector &min, const math::Vector &max) {
         return_virtual_func(is_box_visible, 31, 31, 31, 0, min, max);
     }
 
-    auto max_clients() -> u32 {
+    u32 max_clients() {
         return_virtual_func(max_clients, 21, 21, 21, 0);
     }
 
-    auto set_view_angles(const math::Vector &v) -> void {
+    void set_view_angles(const math::Vector &v) {
         return_virtual_func(set_view_angles, 20, 20, 20, 0, v);
+    }
+
+    bool player_info(u32 index, PlayerInfo *info) {
+        return_virtual_func(player_info, 8, 8, 8, 0, index, info);
     }
 };
 
@@ -153,11 +172,11 @@ class EntList {
 public:
     EntList() = delete;
 
-    auto entity(u32 index) -> Entity * {
+    Entity *entity(u32 index) {
         return_virtual_func(entity, 3, 3, 3, 0, index);
     }
 
-    auto from_handle(EntityHandle h) -> Entity * {
+    Entity *from_handle(EntityHandle h) {
 
         if constexpr (doghook_platform::windows()) {
             return_virtual_func(from_handle, 4, 4, 4, 0, h);
@@ -165,7 +184,7 @@ public:
             return entity(h.serial_index & 0xFFF);
     }
 
-    auto max_entity_index() -> u32 {
+    u32 max_entity_index() {
         return_virtual_func(max_entity_index, 6, 6, 6, 0);
     }
 
@@ -222,7 +241,7 @@ class Input {
 public:
     Input() = delete;
 
-    auto get_user_cmd(u32 sequence_number) -> UserCmd * {
+    UserCmd *get_user_cmd(u32 sequence_number) {
         // Look at above queued_packets_offset for more info
         static u32 array_offset = []() {
             if constexpr (doghook_platform::windows()) {
@@ -241,7 +260,7 @@ public:
         return &cmd_array[sequence_number % 90];
     }
 
-    auto get_verified_user_cmd(u32 sequence_number) -> class VerifiedCmd * {
+    class VerifiedCmd *get_verified_user_cmd(u32 sequence_number) {
         // 03 B7 ? ? ? ? 8D 04 88
         return nullptr;
     }
@@ -254,15 +273,15 @@ class Cvar {
 public:
     Cvar() = delete;
 
-    auto allocate_dll_identifier() -> u32 {
+    u32 allocate_dll_identifier() {
         return_virtual_func(allocate_dll_identifier, 5, 5, 5, 0);
     }
 
-    auto register_command(ConCommandBase *command) -> void {
+    void register_command(ConCommandBase *command) {
         return_virtual_func(register_command, 6, 6, 6, 0, command);
     }
 
-    auto unregister_command(ConCommandBase *command) -> void {
+    void unregister_command(ConCommandBase *command) {
         return_virtual_func(unregister_command, 7, 7, 7, 0, command);
     }
 };
@@ -271,7 +290,7 @@ class Trace {
 public:
     Trace() = delete;
 
-    auto trace_ray(const trace::Ray &ray, u32 mask, trace::Filter *filter, trace::TraceResult *results) -> void {
+    void trace_ray(const trace::Ray &ray, u32 mask, trace::Filter *filter, trace::TraceResult *results) {
         return_virtual_func(trace_ray, 4, 4, 4, 0, ray, mask, filter, results);
     }
 };
@@ -304,7 +323,7 @@ public:
     StudioHitboxSet() = delete;
 
     int  name_index;
-    auto name() const -> const char * {
+    auto name() const {
         assert(0);
         return "";
     }
@@ -364,16 +383,25 @@ public:
     //... TODO:
 };
 
+class StudioFullModel {
+public:
+    StudioFullModel() = delete;
+};
+
 class ModelInfo {
 public:
     ModelInfo() = delete;
 
-    auto model_name(const ModelHandle *m) -> const char * {
+    const char *model_name(const ModelHandle *m) {
         return_virtual_func(model_name, 3, 4, 4, 0, m);
     }
 
-    auto studio_model(const ModelHandle *m) -> const StudioModel * {
+    const StudioModel *studio_model(const ModelHandle *m) {
         return_virtual_func(studio_model, 28, 29, 29, 0, m);
+    }
+
+    const StudioFullModel *extra_data(const ModelHandle *m) {
+        return_virtual_func(extra_data, 10, 11, 11, 0, m);
     }
 };
 
@@ -410,7 +438,7 @@ public:
 // This is from server.dll
 class PlayerInfoManager {
 public:
-    auto globals() -> Globals * {
+    Globals *globals() {
         return_virtual_func(globals, 1, 1, 1, 0);
     }
 };
@@ -419,7 +447,7 @@ class MoveHelper;
 
 class Prediction {
 public:
-    auto setup_move(Player *player, UserCmd *ucmd, MoveHelper *helper, void *move) -> void {
+    void setup_move(Player *player, UserCmd *ucmd, MoveHelper *helper, void *move) {
         return_virtual_func(setup_move, 18, 19, 19, 0, player, ucmd, helper, move);
     }
     void finish_move(Player *player, UserCmd *ucmd, void *move) {

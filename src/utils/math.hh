@@ -229,6 +229,23 @@ public:
         // }
     }
 
+    bool operator==(const math::Matrix3x4 &other) const {
+        return data[0][0] == other.data[0][0] &&
+               data[0][1] == other.data[0][1] &&
+               data[0][2] == other.data[0][2] &&
+               data[0][3] == other.data[0][3] &&
+
+               data[1][0] == other.data[1][0] &&
+               data[1][1] == other.data[1][1] &&
+               data[1][2] == other.data[1][2] &&
+               data[1][3] == other.data[1][3] &&
+
+               data[2][0] == other.data[2][0] &&
+               data[2][1] == other.data[2][1] &&
+               data[2][2] == other.data[2][2] &&
+               data[2][3] == other.data[2][3];
+    }
+
     float *operator[](int i) {
         assert((i >= 0) && (i < 3));
         return data[i];

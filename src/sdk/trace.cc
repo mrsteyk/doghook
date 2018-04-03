@@ -4,7 +4,7 @@
 
 #include "sdk.hh"
 
-auto trace::Filter::should_hit_entity(sdk::Entity *handle_entity, int contents_mask) -> bool {
+bool trace::Filter::should_hit_entity(sdk::Entity *handle_entity, int contents_mask) {
     auto handle      = handle_entity->to_handle();
     auto real_entity = IFace<sdk::EntList>()->from_handle(handle);
 

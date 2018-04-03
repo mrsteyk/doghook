@@ -11,59 +11,66 @@
 
 using namespace sdk;
 
-auto Player::local() -> Player * {
+Player *Player::local() {
     return static_cast<Player *>(IFace<EntList>()->entity(IFace<Engine>()->local_player_index()));
 }
 
 static auto health = Netvar("DT_BasePlayer", "m_iHealth");
-auto        Player::health() -> int & {
+int &       Player::health() {
     return ::health.get<int>(this);
 }
 
 static auto lifestate = Netvar("DT_BasePlayer", "m_lifeState");
-auto        Player::alive() -> bool {
+bool        Player::alive() {
     return ::lifestate.get<u8>(this) == 0;
 }
 
-auto Player::origin() -> math::Vector & {
+math::Vector &Player::origin() {
     return_virtual_func(origin, 9, 11, 11, 0);
 }
 
-auto Player::set_origin(const math::Vector &v) -> void {
+void Player::set_origin(const math::Vector &v) {
+    // Look for "Ignoring unreasonable position (%f,%f,%f) from vphysics! (entity %s)\n"
+
     if constexpr (doghook_platform::windows()) {
         static auto original = signature::find_pattern<void(__thiscall *)(Player *, const math::Vector &)>("client", "55 8B EC 56 57 8B F1 E8 ? ? ? ? 8B 7D 08 F3 0F 10 07", 0);
-        assert(original);
         return original(this, v);
     } else if constexpr (doghook_platform::linux()) {
+        static auto original = signature::find_pattern<void(__thiscall *)(Player *, const math::Vector &)>("client", "55 89 E5 57 56 53 83 EC 1C 8B 5D 08 8B 75 0C 89 1C 24 E8 ? ? ? ? F3 0F 10 06", 0);
+        return original(this, v);
     } else if constexpr (doghook_platform::osx()) {
     }
 }
 
-auto Player::angles() -> math::Vector & {
+math::Vector &Player::angles() {
     return_virtual_func(angles, 10, 12, 12, 0);
 }
 
-auto Player::set_angles(const math::Vector &v) -> void {
+void Player::set_angles(const math::Vector &v) {
+    // Look for "Ignoring bogus angles (%f,%f,%f) from vphysics! (entity %s)\n"
+
     if constexpr (doghook_platform::windows()) {
         static auto original = signature::find_pattern<void(__thiscall *)(Player *, const math::Vector &)>("client", "55 8B EC 83 EC 60 56 57 8B F1", 0);
         assert(original);
         return original(this, v);
     } else if constexpr (doghook_platform::linux()) {
+        static auto original = signature::find_pattern<void(__thiscall *)(Player *, const math::Vector &)>("client", "55 89 E5 57 56 53 81 EC 8C 00 00 00 8B 5D 08 8B 75 0C 89 1C 24", 0);
+        return original(this, v);
     } else if constexpr (doghook_platform::osx()) {
     }
 }
 
 static auto team = Netvar("DT_BaseEntity", "m_iTeamNum");
-auto        Player::team() -> int {
+int         Player::team() {
     return ::team.get<int>(this);
 }
 
 static auto cond = Netvar("DT_TFPlayer", "m_Shared", "m_nPlayerCond");
-auto        Player::cond() -> u32 & {
+u32 &       Player::cond() {
     return ::cond.get<u32>(this);
 }
 
-auto Player::render_bounds() -> std::pair<math::Vector, math::Vector> {
+std::pair<math::Vector, math::Vector> Player::render_bounds() {
     auto func = vfunc::Func<void (Player::*)(math::Vector &, math::Vector &)>(this, 20, 60, 60, 4);
 
     std::pair<math::Vector, math::Vector> ret;
@@ -78,9 +85,17 @@ auto Player::render_bounds() -> std::pair<math::Vector, math::Vector> {
     return ret;
 }
 
-static auto collideable_min = Netvar("DT_BaseEntity", "m_Collision", "m_vecMinsPreScaled");
-static auto collideable_max = Netvar("DT_BaseEntity", "m_Collision", "m_vecMaxsPreScaled");
-auto        Player::collision_bounds() -> std::pair<math::Vector &, math::Vector &> {
+math::Vector Player::world_space_centre() {
+    auto bounds = render_bounds();
+    auto centre = origin();
+
+    centre.z = (bounds.first.z + bounds.second.z) / 2;
+    return centre;
+}
+
+static auto                               collideable_min = Netvar("DT_BaseEntity", "m_Collision", "m_vecMinsPreScaled");
+static auto                               collideable_max = Netvar("DT_BaseEntity", "m_Collision", "m_vecMaxsPreScaled");
+std::pair<math::Vector &, math::Vector &> Player::collision_bounds() {
 
     auto &min = ::collideable_min.get<math::Vector>(this);
     auto &max = ::collideable_max.get<math::Vector>(this);
@@ -88,49 +103,53 @@ auto        Player::collision_bounds() -> std::pair<math::Vector &, math::Vector
     return std::make_pair(std::ref(min), std::ref(max));
 }
 
-static auto view_offset = Netvar("DT_BasePlayer", "localdata", "m_vecViewOffset[0]");
-auto        Player::view_offset() -> math::Vector & {
+static auto   view_offset = Netvar("DT_BasePlayer", "localdata", "m_vecViewOffset[0]");
+math::Vector &Player::view_offset() {
     return ::view_offset.get<math::Vector>(this);
 }
 
 static auto tf_class = Netvar("DT_TFPlayer", "m_PlayerClass", "m_iClass");
-auto        Player::tf_class() -> int {
+int         Player::tf_class() {
     return ::tf_class.get<int>(this);
 }
 
 static auto tick_base = Netvar("DT_BasePlayer", "localdata", "m_nTickBase");
-auto        Player::tick_base() -> int & {
+int &       Player::tick_base() {
     return ::tick_base.get<int>(this);
 }
 
 static auto active_weapon_handle = Netvar("DT_BaseCombatCharacter", "m_hActiveWeapon");
-auto        Player::active_weapon() -> Weapon * {
+Weapon *    Player::active_weapon() {
     return static_cast<Weapon *>(IFace<EntList>()->from_handle(::active_weapon_handle.get<EntityHandle>(this)));
 }
 
 static auto sim_time = Netvar("DT_BaseEntity", "m_flSimulationTime");
-auto        Player::sim_time() -> float & {
+float &     Player::sim_time() {
     return ::sim_time.get<float>(this);
 }
 
 static auto anim_time = Netvar("DT_BaseEntity", "AnimTimeMustBeFirst", "m_flAnimTime");
-auto        Player::anim_time() -> float & {
+float &     Player::anim_time() {
     return ::anim_time.get<float>(this);
 }
 
 static auto cycle = Netvar("DT_BaseAnimating", "serveranimdata", "m_flCycle");
-auto        Player::cycle() -> float & {
+float &     Player::cycle() {
     return ::cycle.get<float>(this);
 }
 
 static auto fov_time = Netvar("DT_BasePlayer", "m_flFOVTime");
-auto        Player::fov_time() -> float {
+float       Player::fov_time() {
     return ::fov_time.get<float>(this);
 }
 
-static auto render_origin = Netvar("DT_BaseEntity", "m_vecOrigin");
-auto        Player::render_origin() -> math::Vector & {
+static auto   render_origin = Netvar("DT_BaseEntity", "m_vecOrigin");
+math::Vector &Player::render_origin() {
     return ::render_origin.get<math::Vector>(this);
+}
+static auto   render_angle = Netvar("DT_BaseEntity", "m_angRotation");
+math::Vector &Player::render_angle() {
+    return ::render_angle.get<math::Vector>(this);
 }
 
 template <typename T>
@@ -142,7 +161,7 @@ struct UtlVector {
     T * dbg_elements;
 };
 
-static auto player_anim_layer_vector(Player *p) -> UtlVector<AnimationLayer> & {
+static UtlVector<AnimationLayer> &player_anim_layer_vector(Player *p) {
     // TODO: we need a better, cross platform method for doing this.
     // check for "%8.4f : %30s : %5.3f : %4.2f : %1d\n"
 
@@ -150,63 +169,71 @@ static auto player_anim_layer_vector(Player *p) -> UtlVector<AnimationLayer> & {
         UtlVector<AnimationLayer> *anim_overlays = reinterpret_cast<UtlVector<AnimationLayer> *>(p + 2216);
         return *anim_overlays;
     } else if constexpr (doghook_platform::linux()) {
-        assert(0);
+        UtlVector<AnimationLayer> *anim_overlays = reinterpret_cast<UtlVector<AnimationLayer> *>(p + 2196);
+        return *anim_overlays;
     } else if constexpr (doghook_platform::osx()) {
         assert(0);
     }
 }
 
-auto Player::anim_layer(u32 index) -> AnimationLayer & {
+AnimationLayer &Player::anim_layer(u32 index) {
     return player_anim_layer_vector(this).mem[index];
 }
 
-auto Player::anim_layer_count() -> u32 {
+u32 Player::anim_layer_count() {
     return player_anim_layer_vector(this).size;
 }
 
-auto Player::update_client_side_animation() -> void {
+void Player::update_client_side_animation() {
     // Look for the string "UpdateClientSideAnimations
-    return_virtual_func(update_client_side_animation, 191, 0, 0, 0);
+    return_virtual_func(update_client_side_animation, 191, 253, 253, 0);
 }
 
-auto Player::invalidate_physics_recursive(u32 flags) -> void {
+void Player::invalidate_physics_recursive(u32 flags) {
+    // Look for "(%d): Cycle latch used to correct %.2f in to %.2f instead of %.2f"
+
     typedef void(__thiscall * InvalidatePhysicsRecursiveFn)(Player *, u32 flags);
 
     if constexpr (doghook_platform::windows()) {
         static auto fn = signature::find_pattern<InvalidatePhysicsRecursiveFn>("client", "55 8B EC 51 53 8B 5D 08 56 8B F3 83 E6 04", 0);
-        fn(this, flags);
+        return fn(this, flags);
     } else if constexpr (doghook_platform::linux()) {
+        static auto fn = signature::find_pattern<InvalidatePhysicsRecursiveFn>("client", "55 89 E5 57 56 53 83 EC 1C 8B 75 0C 8B 5D 08 89 F7", 0);
+        return fn(this, flags);
     } else if constexpr (doghook_platform::osx()) {
     }
 }
 
 static auto sequence = Netvar("DT_BaseAnimating", "m_nSequence");
-auto        Player::sequence() -> int & {
+int &       Player::sequence() {
     return ::sequence.get<int>(this);
 }
 
-auto Player::view_position() -> math::Vector {
+math::Vector Player::view_position() {
     return origin() + view_offset();
 }
 
-auto Player::bone_transforms(math::Matrix3x4 *hitboxes_out, u32 max_bones, u32 bone_mask, float current_time) -> bool {
+bool Player::bone_transforms(math::Matrix3x4 *hitboxes_out, u32 max_bones, u32 bone_mask, float current_time) {
     return_virtual_func(bone_transforms, 16, 96, 96, 4, hitboxes_out, max_bones, bone_mask, current_time);
 }
 
-auto Player::model_handle() -> const ModelHandle * {
+const ModelHandle *Player::model_handle() {
     return_virtual_func(model_handle, 9, 55, 55, 4);
 }
 
-auto Player::studio_model() -> const StudioModel * {
+const StudioModel *Player::studio_model() {
     return IFace<ModelInfo>()->studio_model(this->model_handle());
 }
 
-static auto get_hitboxes_internal(Player *player, const StudioModel *model, PlayerHitboxes *hitboxes, bool create_pose) {
+static auto hitboxes_internal(Player *player, const StudioModel *model, PlayerHitboxes *hitboxes, bool create_pose) {
     math::Matrix3x4 bone_to_world[128];
 
     // #define BONE_USED_BY_ANYTHING        0x0007FF00
-    bool success = player->bone_transforms(bone_to_world, 128, 0x0007FF00, IFace<Engine>()->last_timestamp());
+    // #define BONE_USED_BY_HITBOX			0x00000100
+    bool success = player->bone_transforms(bone_to_world, 128, 0x00000100, IFace<Globals>()->curtime);
     assert(success);
+
+    std::memcpy(hitboxes->bone_to_world, bone_to_world, 128 * sizeof(math::Matrix3x4));
 
     auto hitbox_set_ptr = model->hitbox_set(0);
     assert(hitbox_set_ptr);
@@ -216,7 +243,6 @@ static auto get_hitboxes_internal(Player *player, const StudioModel *model, Play
 
     auto hitboxes_count = std::min(128u, hitbox_set.hitboxes_count);
 
-    math::Vector origin;
     math::Vector centre;
 
     for (u32 i = 0; i < hitboxes_count; ++i) {
@@ -236,7 +262,8 @@ static auto get_hitboxes_internal(Player *player, const StudioModel *model, Play
 
 #ifdef _DEBUG
         math::Vector rotation;
-        math::matrix_angles(transform, &rotation.x);
+        math::Vector origin;
+        math::matrix_angles(transform, rotation, origin);
 
         hitboxes->rotation[i] = rotation;
         hitboxes->origin[i]   = origin;
@@ -248,9 +275,19 @@ static auto get_hitboxes_internal(Player *player, const StudioModel *model, Play
     return hitboxes_count;
 }
 
-auto Player::hitboxes(PlayerHitboxes *hitboxes_out, bool create_pose) -> u32 {
+u32 Player::hitboxes(PlayerHitboxes *hitboxes_out, bool create_pose) {
     auto model = studio_model();
     assert(model);
 
-    return get_hitboxes_internal(this, model, hitboxes_out, create_pose);
+    return hitboxes_internal(this, model, hitboxes_out, create_pose);
+}
+
+PlayerInfo Player::info() {
+    PlayerInfo info;
+    auto       found = IFace<Engine>()->player_info(index(), &info);
+
+    if (!found) {
+        info.user_id = -1;
+    }
+    return info;
 }

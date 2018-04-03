@@ -13,7 +13,7 @@ GameSystem::~GameSystem() {
     // TODO: remove the gamesystem!
 }
 
-auto GameSystem::add_all() -> void {
+void GameSystem::add_all() {
     using AddFn = void (*)(IGameSystem *);
     AddFn add_fn;
 

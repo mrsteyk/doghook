@@ -6,6 +6,8 @@
 #include <sdk/platform.hh>
 #include <sdk/sdk.hh>
 
+#include "modules/esp.hh"
+
 using namespace sdk;
 
 namespace paint_hook {
@@ -26,6 +28,7 @@ void hooked_paint(EngineVgui *instance, u32 paint_method)
         draw::start();
 
         // Draw here!
+        esp::paint();
 
         draw::finish();
     }

@@ -38,6 +38,13 @@
 #else
     #error Unknown platform: fix me!
 #endif
+
+#define doghook_platform_debug() false
+
+#if defined(_DEBUG) || defined(DEBUG)
+    #undef doghook_platform_debug
+    #define doghook_platform_debug() true
+#endif
 // clang-format on
 
 namespace doghook_platform {
@@ -58,7 +65,7 @@ inline constexpr bool gcc() { return doghook_platform_gcc(); }
 #include <Windows.h>
 #endif
 
-#if doghook_platform_windows() == false
+#if !doghook_platform_windows()
 // Only windows has these
 #define __fastcall
 #define __stdcall
@@ -67,5 +74,7 @@ inline constexpr bool gcc() { return doghook_platform_gcc(); }
 
 // TODO: make a function wrapper please
 #define _stricmp strcasecmp
+
+#include <signal.h>
 
 #endif

@@ -25,11 +25,11 @@ public:
         value = new_value;
     }
 
-    auto operator-> () -> T *& {
+    T *& operator-> () {
         return value;
     }
 
-    auto get() -> T *& {
+    T *& get() {
         return value;
     }
 

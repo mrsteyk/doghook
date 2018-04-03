@@ -5,11 +5,11 @@
 namespace sdk {
 class Weapon : public Entity {
 public:
-    auto can_shoot(u32 tickbase) -> bool;
+    bool can_shoot(u32 tickbase);
 
-    auto next_primary_attack() -> float;
-    auto next_secondary_attack() -> float;
+    float next_primary_attack();
+    float next_secondary_attack();
 
-    auto owner() -> Entity *;
+    Entity * owner();
 };
 } // namespace sdk

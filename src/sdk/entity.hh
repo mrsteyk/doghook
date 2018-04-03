@@ -20,8 +20,14 @@ public:
     template <typename T, u32 offset>
     auto set(T data) { *reinterpret_cast<T *>(reinterpret_cast<uptr>(this) + offset) = data; }
 
+    template <typename T>
+    auto set(u32 offset, T data) { *reinterpret_cast<T *>(reinterpret_cast<uptr>(this) + offset) = data; }
+
     template <typename T, u32 offset>
     auto get() { return *reinterpret_cast<T *>(reinterpret_cast<uptr>(this) + offset); }
+
+    template <typename T>
+    auto get(u32 offset) { return *reinterpret_cast<T *>(reinterpret_cast<uptr>(this) + offset); }
 
     // upcasts
     class Player *to_player();

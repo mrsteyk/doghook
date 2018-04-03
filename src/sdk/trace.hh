@@ -144,8 +144,8 @@ class Filter {
     sdk::Entity *ignore_entity;
 
 public:
-    virtual auto should_hit_entity(sdk::Entity *handle_entity, int contents_mask) -> bool;
-    virtual auto GetTraceType() const -> u32 {
+    virtual bool should_hit_entity(sdk::Entity *handle_entity, int contents_mask);
+    virtual u32  GetTraceType() const {
         return 0; // hit everything
     }
 

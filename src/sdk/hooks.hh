@@ -75,7 +75,7 @@ public:
         new_table[index] = f;
     }
 
-    auto unhook_function(u32 index) -> void {
+    void unhook_function(u32 index) {
         assert(index < count_funcs());
 
         auto found = false;

@@ -8,11 +8,11 @@
 
 // helpers for calling virtual functions
 namespace vfunc {
-inline auto get_table(void *inst, u32 offset) -> void ** {
+inline void ** get_table(void *inst, u32 offset) {
     return *reinterpret_cast<void ***>(reinterpret_cast<u8 *>(inst) + offset);
 }
 
-inline auto get_table(const void *inst, u32 offset) -> const void ** {
+inline const void ** get_table(const void *inst, u32 offset) {
     return *reinterpret_cast<const void ***>(
         reinterpret_cast<u8 *>(
             const_cast<void *>(inst)) +
@@ -74,7 +74,7 @@ public:
         f = get_func<FunctionType>(instance, index, offset);
     }
 
-    auto invoke(Args... args) -> Ret {
+    Ret invoke(Args... args) {
         return f(instance, args...);
     }
 };

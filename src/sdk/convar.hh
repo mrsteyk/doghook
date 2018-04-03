@@ -88,7 +88,7 @@ public:
 
     static auto get_range() { return Convar_Range(); }
 
-    static auto init_all() -> void;
+    static void init_all();
 };
 
 template <typename T>
@@ -179,7 +179,7 @@ public:
 
     const char *to_string() const override {
         static u32  cur_index = 0;
-        static char temp[20][8];
+        static char temp[8][20];
 
         cur_index += 1;
 
@@ -188,11 +188,11 @@ public:
 #endif
 
 #if doghook_platform_windows()
-        _itoa_s(value, temp[cur_index], 10);
+        _itoa_s(value, temp[cur_index % 8], 10);
 #else
         sprintf(temp[cur_index], "%d", value);
 #endif
-        return temp[cur_index];
+        return temp[cur_index % 8];
     }
 
     operator int() const { return value; }
@@ -250,16 +250,14 @@ public:
 
     const char *to_string() const override {
         static u32  cur_index = 0;
-        static char temp[20][8];
+        static char temp[8][20];
 
         cur_index += 1;
 
-#ifdef _DEBUG
-        memset(temp[cur_index], 0, sizeof(temp));
-#endif
-
         // TODO: this is clumsy
-        return std::to_string(value).c_str();
+        strncpy(temp[cur_index % 8], std::to_string(value).c_str(), sizeof(temp[0]));
+
+        return temp[cur_index % 8];
     }
 
     operator float() const { return value; }

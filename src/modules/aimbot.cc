@@ -16,6 +16,7 @@
 
 #include "sdk/log.hh"
 #include "utils/math.hh"
+#include "utils/profiler.hh"
 
 #include <algorithm>
 
@@ -53,6 +54,8 @@ static auto visible_no_entity(const math::Vector &position) {
 
 static Convar<bool> doghook_aimbot_pedantic_mode{"doghook_aimbot_pedantic_mode", true, nullptr};
 static auto         visible(Entity *e, const math::Vector &position, const int hitbox) {
+    profiler_profile_function();
+
     trace::TraceResult result;
     trace::Ray         ray;
     trace::Filter      f(local_player);
@@ -72,6 +75,8 @@ static auto         visible(Entity *e, const math::Vector &position, const int h
 
 static auto multipoint_internal(Entity *e, float granularity, const int hitbox, const math::Vector &centre,
                                 const math::Vector &min, const math::Vector &max, math::Vector &out) {
+    profiler_profile_function();
+
     // go from centre to centre min first
     for (float i = 0.0f; i <= 1.0f; i += granularity) {
         math::Vector point = centre.lerp(min, i);
@@ -100,6 +105,8 @@ static Convar<float> doghook_aimbot_multipoint_granularity{"doghook_aimbot_multi
 
 // TODO: there must be some kind of better conversion we can use here to get a straight line across the hitbox
 static auto multipoint(Player *player, const int hitbox, const math::Vector &centre, const math::Vector &min, const math::Vector &max, math::Vector &position_out) {
+    profiler_profile_function();
+
     // create a divisor out of the granularity
     float divisor = doghook_aimbot_multipoint_granularity;
     if (divisor == 0) return false;
@@ -128,16 +135,56 @@ static auto find_best_box() {
     auto weapon_class_id = local_weapon->client_class()->class_id;
 
     switch (tf_class) {
-    case 2:                                                         // sniper
-        if (weapon_class_id == 305) return std::make_pair(0, true); // aim head with the rifle
+    case 2:                                                                              // sniper
+        if (weapon_class_id == class_id::CTFSniperRifle) return std::make_pair(0, true); // aim head with the rifle
     default:
         return std::make_pair(3, false); // chest
     }
 }
 
 static Convar<bool> doghook_aimbot_enable_backtrack{"doghook_aimbot_enable_backtrack", true, nullptr};
+static Convar<bool> doghook_aimbot_reverse_backtrack_order{"doghook_aimbot_reverse_backtrack_order", true, nullptr};
+
+auto visible_target_inner(Player *player, std::pair<int, bool> best_box, u32 current_tick, u32 delta, PlayerHitboxes &hitboxes, u32 hitboxes_count, math::Vector &pos) {
+    if (delta > 0) {
+        auto success = backtrack::backtrack_player_to_tick(player, current_tick - delta);
+        if (success == false) return false;
+
+        backtrack::hitboxes_for_player(player, current_tick - delta, hitboxes);
+    }
+    // check best hitbox first
+    if (visible(player, hitboxes.centre[best_box.first], best_box.first)) {
+        pos = hitboxes.centre[best_box.first];
+        return true;
+    } else if (multipoint(player, best_box.first, hitboxes.centre[best_box.first], hitboxes.min[best_box.first], hitboxes.max[best_box.first], pos)) {
+        return true;
+    }
+
+    // .second is whether we should only check the best box
+    if (!best_box.second) {
+        for (u32 i = 0; i < hitboxes_count; i++) {
+            if (visible(player, hitboxes.centre[i], i)) {
+                pos = hitboxes.centre[i];
+                return true;
+            }
+        }
+
+#if 0
+        // Perform multiboxing after confirming that we do not have any other options
+        for (u32 i = 0; i < hitboxes_count; i++) {
+            if (multipoint(player, i, hitboxes.centre[i], hitboxes.min[i], hitboxes.max[i], pos)) {
+                return true;
+            }
+        }
+#endif
+    }
+
+    return false;
+}
 
 auto visible_target(Entity *e, math::Vector &pos) {
+    profiler_profile_function();
+
     // TODO: should entity have a to_player_nocheck() method
     // as we already know at this point that this is a player...
     auto player = e->to_player();
@@ -148,55 +195,39 @@ auto visible_target(Entity *e, math::Vector &pos) {
     // Tell backtrack about these hitboxes
     backtrack::update_player_hitboxes(player, hitboxes, hitboxes_count);
 
-    auto current_tick = IFace<Globals>()->tickcount;
+    auto current_tick  = IFace<Globals>()->tickcount;
+    auto best_box      = find_best_box();
+    auto reverse_order = !!doghook_aimbot_reverse_backtrack_order;
 
-    // TODO: This can probably be expressed much better
-    auto delta = 0;
-    while (delta < backtrack::max_ticks) {
-        cmd_delta = delta;
-
-        // TODO: there must be a better way to do this...
-        if (delta > 0) backtrack::hitboxes_for_player(player, current_tick - delta, hitboxes);
-
-        auto best_box = find_best_box();
-
-        // check best hitbox first
-        if (visible(e, hitboxes.centre[best_box.first], best_box.first)) {
-            pos = hitboxes.centre[best_box.first];
-            return true;
-        } else if (multipoint(player, best_box.first, hitboxes.centre[best_box.first], hitboxes.min[best_box.first], hitboxes.max[best_box.first], pos)) {
-            return true;
-        }
-
-        // .second is whether we should only check the best box
-        if (best_box.second != true) {
-            for (u32 i = 0; i < hitboxes_count; i++) {
-                if (visible(e, hitboxes.centre[i], i)) {
-                    pos = hitboxes.centre[i];
-                    return true;
-                }
-            }
-
-            // Perform multiboxing after confirming that we do not have any other options
-            for (u32 i = 0; i < hitboxes_count; i++) {
-                if (multipoint(player, i, hitboxes.centre[i], hitboxes.min[i], hitboxes.max[i], std::ref(pos))) {
-                    return true;
-                }
-            }
-        }
-
-        // If we dont want to do backtracking, escape
-        if (doghook_aimbot_enable_backtrack == false) break;
-
-        // Backtrack to the previous tick
-        // backtrack_player_to_tick will return false if the player is dead at this tick
-        // so we need to keep trying until we hit the max or we find an alive state
-        auto success = false;
-        do {
-            delta += 1;
-            success = backtrack::backtrack_player_to_tick(player, current_tick - delta);
-        } while (success == false && delta < backtrack::max_ticks);
+    if (!reverse_order) {
+        // Do no backtrack first
+        auto visible = visible_target_inner(player, best_box, current_tick, 0, hitboxes, hitboxes_count, pos);
+        if (visible) return true;
     }
+
+    if (!doghook_aimbot_enable_backtrack) return false;
+
+    // If we are going in reverse order then make sure that happens
+    const auto delta_delta = doghook_aimbot_reverse_backtrack_order ? -1 : 1;
+    auto       delta       = doghook_aimbot_reverse_backtrack_order ? backtrack::max_ticks : 0;
+
+    u32 new_tick;
+
+    do {
+        // Go onto the next tick and see what
+        delta += delta_delta;
+        new_tick = current_tick - delta;
+        if (!backtrack::tick_valid(new_tick)) continue;
+
+        if (backtrack::backtrack_player_to_tick(player, current_tick - delta)) {
+            auto visible = visible_target_inner(player, best_box, current_tick, delta, hitboxes, hitboxes_count, pos);
+            if (visible) {
+                cmd_delta = delta;
+                return true;
+            }
+        }
+
+    } while (delta > 0 && delta < backtrack::max_ticks);
 
     return false;
 }
@@ -212,7 +243,7 @@ auto valid_target(Entity *e) {
     return false;
 }
 
-auto finished_target(Target t) -> void {
+void finished_target(Target t) {
     assert(t.first != nullptr);
 
     IFace<DebugOverlay>()->add_entity_text_overlay(t.first->index(), 2, 0, 255, 255, 255, 255, "finished");
@@ -221,6 +252,8 @@ auto finished_target(Target t) -> void {
 }
 
 auto sort_targets() {
+    profiler_profile_function();
+
     std::sort(targets.begin(), targets.end(),
               [](const Target &a, const Target &b) {
                   // Ignore null targets (artifact of having a resized vector mess
@@ -232,6 +265,8 @@ auto sort_targets() {
 }
 
 auto find_targets() {
+    profiler_profile_function();
+
     if (can_find_targets == false) return;
 
     // find targets
@@ -244,9 +279,15 @@ auto find_targets() {
             auto pos = math::Vector::invalid();
             if (visible_target(e, pos)) {
                 finished_target(Target{e, pos});
+
+                // Now that we have a target break!
+                // TOOD: maybe we shouldnt do this??
+                break;
             }
         }
     }
+
+    // TODO: remove me
     sort_targets();
 }
 
@@ -273,6 +314,8 @@ inline static auto clamp_angle(const math::Vector &angles) {
 }
 
 inline static auto fix_movement_for_new_angles(const math::Vector &movement, const math::Vector &old_angles, const math::Vector &new_angles) {
+    profiler_profile_function();
+
     math::Matrix3x4 rotate_matrix;
 
     auto delta_angles = new_angles - old_angles;
@@ -303,6 +346,8 @@ static Convar<bool> doghook_aimbot_aim_if_not_attack            = Convar<bool>{"
 static Convar<bool> doghook_aimbot_disallow_attack_if_no_target = Convar<bool>{"doghook_aimbot_disallow_attack_if_no_target", false, nullptr};
 
 void create_move(sdk::UserCmd *cmd) {
+    profiler_profile_function();
+
     if (local_weapon == nullptr || !can_find_targets) return;
 
     find_targets();
@@ -329,6 +374,7 @@ void create_move(sdk::UserCmd *cmd) {
             cmd->forwardmove = new_movement.x;
             cmd->sidemove    = new_movement.y;
 
+            logging::msg("cmd_delta = %d", cmd_delta);
             cmd->tick_count -= cmd_delta;
         }
 
@@ -339,6 +385,7 @@ void create_move(sdk::UserCmd *cmd) {
 }
 
 void create_move_pre_predict(sdk::UserCmd *cmd) {
+    profiler_profile_function();
     // deal with some local data that we want to keep around
     local_player = Player::local();
     assert(local_player);

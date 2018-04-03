@@ -8,20 +8,20 @@
 using namespace sdk;
 
 auto next_primary_attack = Netvar("DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextPrimaryAttack");
-auto Weapon::next_primary_attack() -> float {
+float Weapon::next_primary_attack() {
     return ::next_primary_attack.get<float>(this);
 }
 
 auto next_secondary_attack = Netvar("DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextSecondaryAttack");
-auto Weapon::next_secondary_attack() -> float {
+float Weapon::next_secondary_attack() {
     return ::next_secondary_attack.get<float>(this);
 }
 
-auto Weapon::can_shoot(u32 tickbase) -> bool {
+bool Weapon::can_shoot(u32 tickbase) {
     return tickbase * IFace<Globals>()->interval_per_tick > next_primary_attack();
 }
 
-auto Weapon::owner() -> Entity * {
+Entity * Weapon::owner() {
     // TODO:
     return nullptr;
 }

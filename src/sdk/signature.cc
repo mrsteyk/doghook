@@ -115,7 +115,7 @@ static std::pair<uptr, uptr> find_module_code_section(const char *module_name) {
     assert(0);
 }
 
-auto signature::resolve_library(const char *name) -> void * {
+void *signature::resolve_library(const char *name) {
 #if doghook_platform_windows()
     // TODO: actually check directories for this dll instead of
     // letting the loader do the work
@@ -130,7 +130,7 @@ auto signature::resolve_library(const char *name) -> void * {
 
 #elif doghook_platform_linux()
     char found[1024];
-    auto search_directory = [](const char *to_find, const char *dirname, char *out) -> bool {
+    auto search_directory = [](const char *to_find, const char *dirname, char *out) {
         auto d = opendir(dirname);
         assert(d);
         defer(closedir(d));

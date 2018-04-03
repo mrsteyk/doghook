@@ -47,7 +47,6 @@ workspace "doghook"
             toolset "clang"
         filter "system:windows"
             toolset "msc-v141"
-            buildoptions{ "--driver-mode=cl" }
         filter {}
 
         kind "SharedLib"

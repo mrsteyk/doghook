@@ -1,9 +1,13 @@
 #include <precompiled.hh>
 
+#include <cstdarg>
+#include <cstdio>
+
 #include "draw.hh"
 
 #include "hooks.hh"
 #include "interface.hh"
+#include "log.hh"
 #include "sdk.hh"
 #include "vfunc.hh"
 
@@ -37,18 +41,17 @@ public:
         return_virtual_func(set_text_pos, 20, 20, 20, 0, x, y);
     }
 
-    // TODO: On windows this really should be wchar_t
-    void text(const char *text, u32 len) {
-        return_virtual_func(text, 22, 22, 22, 0, text, len);
+    void text(const wchar_t *text, u32 len, int unk1 = 1) {
+        return_virtual_func(text, 22, 22, 22, 0, text, len, unk1);
     }
 
     FontHandle create_font() {
         return_virtual_func(create_font, 66, 66, 66, 0);
     }
 
-    void set_font_attributes(FontHandle &font, const char *font_name,
-                             int tall, int weight, int blur, int scanlines, int flags) {
-        return_virtual_func(set_font_attributes, 67, 67, 67, 0, font, font_name, tall, weight, blur, scanlines, flags);
+    void set_font_attributes(FontHandle font, const char *font_name,
+                             int tall, int weight, int blur, int scanlines, int flags, int unk1 = 0, int unk2 = 0) {
+        return_virtual_func(set_font_attributes, 67, 67, 67, 0, font, font_name, tall, weight, blur, scanlines, flags, unk1, unk2);
     }
 
     void text_size(FontHandle f, const char *text, int &wide, int &tall) {
@@ -63,9 +66,15 @@ auto         is_overlay() { return current_render_target == RenderTarget::overla
 void init(RenderTarget t) {
     if (t == RenderTarget::overlay) {
     } else if (t == RenderTarget::surface) {
+#if doghook_platform_linux()
+        std::setlocale(LC_ALL, "en_US.utf8");
+#endif
+
         // set up surface interfaces
         IFace<EngineVgui>().set_from_interface("engine", "VEngineVGui");
         IFace<Surface>().set_from_interface("vguimatsurface", "VGUI_Surface030");
+
+        current_render_target = RenderTarget::surface;
     }
 }
 
@@ -104,13 +113,12 @@ void finish() {
     finish_drawing(IFace<Surface>().get());
 }
 
-math::Vector world_to_screen(math::Vector &v) {
-    math::Vector result;
-    auto         is_visible = IFace<DebugOverlay>()->screen_position(v, result);
+bool world_to_screen(const math::Vector &world, math::Vector &screen) {
+    if (is_surface()) {
+        return !IFace<DebugOverlay>()->screen_position(world, screen);
+    }
 
-    if (is_visible) return result;
-
-    return math::Vector::invalid();
+    return false;
 }
 
 void set_color(Color c) {
@@ -132,6 +140,48 @@ void outlined_rect(Color c, math::Vector p1, math::Vector p2) {
         set_color(c);
 
         IFace<Surface>()->outlined_rect(p1.x, p1.y, p2.x, p2.y);
+    }
+}
+
+FontHandle register_font(const char *font_name, u32 size) {
+    if (is_surface()) {
+        auto h = IFace<Surface>()->create_font();
+        IFace<Surface>()->set_font_attributes(h, font_name, size, 500, 0, 0, 0x010 | 0x080);
+
+        return h;
+    }
+
+    return -1;
+}
+
+#include <cstdarg>
+
+void text(FontHandle h, Color c, math::Vector p, const char *format, ...) {
+    if (is_surface()) {
+
+        char    buffer[1024];
+        wchar_t buffer_wide[1024];
+        memset(buffer, 0, sizeof(buffer));
+
+        va_list args;
+        va_start(args, format);
+        vsnprintf(buffer, 1023, format, args);
+        va_end(args);
+
+        // TODO: is this even necessary??
+        const wchar_t *format;
+        if constexpr (doghook_platform::windows())
+            format = L"%S";
+        else if constexpr (doghook_platform::linux())
+            format = L"%s";
+
+        swprintf(buffer_wide, 1024, format, buffer);
+
+        IFace<Surface>()->set_font_handle(h);
+        IFace<Surface>()->set_font_color(c.r, c.g, c.b, c.a);
+        IFace<Surface>()->set_text_pos(p.x, p.y);
+
+        IFace<Surface>()->text(buffer_wide, wcslen(buffer_wide));
     }
 }
 

@@ -161,7 +161,7 @@ public:
     // helper functions for converting from IConVar and to IConVar
     static auto from_iconvar(IConVar *v) { return reinterpret_cast<ConCommandBase *>(reinterpret_cast<u8 *>(v) - 24); }
     static auto to_iconvar(ConCommandBase *b) { return reinterpret_cast<IConVar *>(reinterpret_cast<u8 *>(b) + 24); }
-    auto        to_iconvar() -> IConVar * { return ConCommandBase::to_iconvar(this); }
+    IConVar *   to_iconvar() { return ConCommandBase::to_iconvar(this); }
 
 #if doghook_platform_windows()
 #define DEFINE_THUNK(type, name, real_name)                        \
@@ -344,5 +344,9 @@ void ConvarBase::init_all() {
         IFace<sdk::Cvar>()->register_command(c);
 
         c = next;
+    }
+
+    for (auto c : ConvarBase::Convar_Range()) {
+        c->tf_convar->set_value(c->to_string());
     }
 }
