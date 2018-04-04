@@ -281,13 +281,12 @@ auto find_targets() {
                 finished_target(Target{e, pos});
 
                 // Now that we have a target break!
-                // TOOD: maybe we shouldnt do this??
-                break;
+                // TODO: only do this when we want to do speedy targets!
+                //break;
             }
         }
     }
 
-    // TODO: remove me
     sort_targets();
 }
 

@@ -51,6 +51,9 @@ public:
 void enter_node(u32 id, const char *name);
 void exit_node();
 
+bool profiling_enabled();
+void set_profiling_enabled(bool s);
+
 // access all nodes via index (returns nullptr at end of array)
 ProfileNode *node(u32 index);
 ProfileNode *find_root_node();
@@ -66,7 +69,7 @@ public:
     ~ProfileScope() { exit_node(); };
 };
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 #if _MSC_VER
 #define profiler_profile_function() \
     auto __ProfileScope##__LINE__ = profiler::ProfileScope(__FUNCTION__)
@@ -76,9 +79,9 @@ public:
 #endif
 #define profiler_profile_scope(name) \
     auto __ProfileScope##__LINE__ = profiler::ProfileScope("/" name)
-#else
-#define profiler_profile_function()
-#define profiler_profile_scope(name)
-#endif
+//#else
+//#define profiler_profile_function()
+//#define profiler_profile_scope(name)
+//#endif
 
 } // namespace profiler

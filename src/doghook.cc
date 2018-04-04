@@ -22,6 +22,8 @@
 
 #include "utils/profiler.hh"
 
+static Convar<bool> doghook_profiling_enabled{"doghook_profiling_enabled", false, nullptr};
+
 // Singleton for doing init / deinit of doghook
 // and dealing with hooks from gamesystem
 
@@ -115,6 +117,7 @@ public:
 
         // make sure that the profiler is inited first
         profiler::init();
+        doghook_profiling_enabled = profiler::profiling_enabled();
 
         // make sure that the netvars are initialised
         // becuase their dynamic initialiser could be after the
@@ -162,6 +165,7 @@ public:
     // HOWEVER: it might be better to do this at frame_end()
     void update([[maybe_unused]] float frametime) override {
         if (inited != true) return;
+        profiler::set_profiling_enabled(doghook_profiling_enabled);
     }
 
     Doghook() {

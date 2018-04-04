@@ -77,11 +77,6 @@ std::pair<math::Vector, math::Vector> Player::render_bounds() {
 
     func.invoke(ret.first, ret.second);
 
-    auto origin = this->origin();
-
-    ret.first += origin;
-    ret.second += origin;
-
     return ret;
 }
 
@@ -89,7 +84,7 @@ math::Vector Player::world_space_centre() {
     auto bounds = render_bounds();
     auto centre = origin();
 
-    centre.z = (bounds.first.z + bounds.second.z) / 2;
+    centre.z += (bounds.first.z + bounds.second.z) / 2;
     return centre;
 }
 

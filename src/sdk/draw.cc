@@ -11,6 +11,8 @@
 #include "sdk.hh"
 #include "vfunc.hh"
 
+#include "utils/profiler.hh"
+
 namespace sdk::draw {
 
 class Surface {
@@ -34,7 +36,7 @@ public:
     }
 
     void set_font_color(int r, int g, int b, int a) {
-        return_virtual_func(set_font_color, 19, 18, 18, 0, r, b, g, a);
+        return_virtual_func(set_font_color, 19, 18, 18, 0, r, g, b, a);
     }
 
     void set_text_pos(int x, int y) {
@@ -157,6 +159,7 @@ FontHandle register_font(const char *font_name, u32 size) {
 #include <cstdarg>
 
 void text(FontHandle h, Color c, math::Vector p, const char *format, ...) {
+    profiler_profile_function();
     if (is_surface()) {
 
         char    buffer[1024];

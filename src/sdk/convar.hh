@@ -269,7 +269,7 @@ public:
 };
 
 template <>
-class Convar<char *> : public ConvarBase {
+class Convar<const char *> : public ConvarBase {
     char *value;
 
 public:

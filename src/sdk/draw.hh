@@ -7,8 +7,21 @@
 namespace sdk {
 namespace draw {
 
-struct Color {
+class Color {
+public:
     u8 r, g, b, a;
+
+    Color()               = default;
+    Color(const Color &c) = default;
+    explicit Color(u32 c) {
+        auto array = (u8 *)&c;
+        r          = array[3];
+        g          = array[2];
+        b          = array[1];
+        a          = array[0];
+    }
+    Color(u8 r, u8 g, u8 b, u8 a) : r(r), g(g), b(b), a(a) {
+    }
 };
 
 enum class RenderTarget {

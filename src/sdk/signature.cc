@@ -2,6 +2,8 @@
 
 #include "signature.hh"
 
+#include "utils/hex.hh"
+
 #if doghook_platform_linux()
 #include <dirent.h>
 #include <elf.h>
@@ -12,24 +14,7 @@
 #endif
 
 using namespace signature;
-
-static constexpr auto in_range(char x, char a, char b) {
-    return (x >= a && x <= b);
-}
-
-static constexpr auto get_bits(char x) {
-    if (in_range((x & (~0x20)), 'A', 'F')) {
-        return (x & (~0x20)) - 'A' + 0xa;
-    } else if (in_range(x, '0', '9')) {
-        return x - '0';
-    } else {
-        return 0;
-    }
-}
-
-static constexpr auto get_byte(const char *x) {
-    return get_bits(x[0]) << 4 | get_bits(x[1]);
-}
+using namespace hex;
 
 static u8 *find_pattern_internal(uptr start, uptr end, const char *pattern) {
     u8 *first = 0;
@@ -38,7 +23,7 @@ static u8 *find_pattern_internal(uptr start, uptr end, const char *pattern) {
 
     for (uptr cur = start; cur < end; cur += 1) {
         if (!*pat) return first;
-        if (*(u8 *)pat == '\?' || *(u8 *)cur == get_byte(pat)) {
+        if (*(u8 *)pat == '\?' || *(u8 *)cur == byte(pat)) {
             if (first == 0) first = reinterpret_cast<u8 *>(cur);
             if (!pat[2]) return first;
             if (*reinterpret_cast<const u16 *>(pat) == '\?\?' ||

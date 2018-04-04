@@ -174,6 +174,26 @@ public:
 
         return ret;
     }
+
+    inline auto min(const Vector &other) const {
+        Vector ret;
+
+        ret.x = x < other.x ? x : other.x;
+        ret.y = y < other.y ? y : other.y;
+        ret.z = z < other.z ? z : other.z;
+
+        return ret;
+    }
+
+    inline auto max(const Vector &other) const {
+        Vector ret;
+
+        ret.x = x > other.x ? x : other.x;
+        ret.y = y > other.y ? y : other.y;
+        ret.z = z > other.z ? z : other.z;
+
+        return ret;
+    }
 };
 
 class Matrix3x4 {

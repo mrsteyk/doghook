@@ -9,42 +9,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <x86intrin.h>
-
-class TimeVal {
-public:
-    TimeVal() {}
-    TimeVal &operator=(const TimeVal &other) {
-        tv = other.tv;
-        return *this;
-    }
-
-    inline double operator-(const TimeVal &left) {
-        u64 left_us  = (u64)left.tv.tv_sec * 1000000 + left.tv.tv_usec;
-        u64 right_us = (u64)tv.tv_sec * 1000000 + tv.tv_usec;
-        u64 diff_us  = left_us - right_us;
-        return diff_us / 1000000;
-    }
-
-    timeval tv;
-};
-
-static inline double timeval_sub(const timeval &left, const timeval &right) {
-    auto right_us = (u64)right.tv_sec * 1000000 + right.tv_usec;
-    auto left_us  = (u64)left.tv_sec * 1000000 + left.tv_usec;
-
-    // dont question it
-    auto diff = right_us - left_us;
-    return diff / 1000000;
-}
-// Positive diff of 2 u64s
-static inline u64 diff(u64 v1, u64 v2) {
-    i64 d = v1 - v2;
-    if (d >= 0)
-        return d;
-    else
-        return -d;
-}
-
 #endif
 
 namespace profiler {
@@ -114,6 +78,18 @@ u64 Timer::sample() {
 // Calculate the clockspeed on init
 init_time(Timer::calculate_clock_speed());
 
+#ifdef _DEBUG
+bool enable_profiling = true;
+#else
+bool enable_profiling = false;
+#endif
+
+bool profiling_enabled() { return enable_profiling; }
+void set_profiling_enabled(bool s) { enable_profiling = s; }
+
+// TODO: using this flat based structure means that we cant have a 2 nodes for the same location
+// Take the function draw::test, it may be called from multiple places, but there is only 1 timer for it
+// This means that the timer will be wrong for that function / may not show up in the graph properly...
 std::vector<ProfileNode *> nodes;
 
 ProfileNode *find_node(u32 id) {
@@ -147,12 +123,13 @@ void enter_node(u32 id, const char *name) {
         current_nodes.push(find_root_node());
     }
 
+    if (!enable_profiling) return;
+
     // TODO: maybe we should try and search for nodes that we know are children first??
     auto current_node = current_nodes.top();
     auto node         = find_node(id);
 
     if (node == nullptr) {
-
         node = new ProfileNode();
 
         node->parent = current_nodes.top();
@@ -166,6 +143,12 @@ void enter_node(u32 id, const char *name) {
         nodes.push_back(node);
     }
 
+    if (current_node != node)
+        // If we arent the child of the current node then add us
+        if (std::find(current_node->children.begin(), current_node->children.end(), node) == current_node->children.end()) {
+            current_node->children.push_back(node);
+        }
+
     if (node->recursions == 0) {
         node->t.start();
         node->recursions = 1;
@@ -178,6 +161,8 @@ void enter_node(u32 id, const char *name) {
 
 void exit_node() {
     if (current_nodes.size() < 1) return; // we clearly arent inited yet...
+
+    if (!enable_profiling) return;
 
     auto node = current_nodes.top();
 
