@@ -39,6 +39,8 @@ workspace "doghook"
         optimize "Full"
         symbols "Off"
         flags {"LinkTimeOptimization"}
+        floatingpoint "Fast"
+        vectorextensions "AVX"
 
     filter {}
 

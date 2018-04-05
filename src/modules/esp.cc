@@ -61,7 +61,7 @@ void paint() {
 
     show_nodes(profiler::find_root_node(), {0, 100, 0});
 
-    if (IFace<Engine>()->in_game() == false) return;
+    if (!IFace<Engine>()->in_game()) return;
 
     auto local_player = Player::local();
 
@@ -71,10 +71,11 @@ void paint() {
     auto enemy_color    = draw::Color(hex::dword(doghook_esp_enemy.to_string()));
 
     for (auto e : IFace<EntList>()->get_range()) {
-        if (e->is_valid() == false) continue;
+        if (!e->is_valid()) continue;
+
+        if (e->dormant()) continue;
 
         if (auto player = e->to_player()) {
-
             if (!player->alive()) continue;
 
             auto player_color = player->team() == local_player_team ? friendly_color : enemy_color;
@@ -111,7 +112,7 @@ void paint() {
                 draw::world_to_screen(point_list[0], min);
                 max = min;
 
-                bool visible = true;
+                auto visible = true;
                 for (u32 i = 1; i < 8; i++) {
                     math::Vector new_point;
                     draw::world_to_screen(point_list[i], new_point);

@@ -18,7 +18,6 @@
 namespace sdk {
 class ConCommandBase;
 class IConVar;
-} // namespace sdk
 
 enum class ConvarType {
     Bool,
@@ -312,3 +311,27 @@ public:
         return value;
     }
 };
+
+// This wraps access to a games convar by name (similar to convarref)
+class ConvarWrapper {
+    ConCommandBase *base;
+
+public:
+    ConvarWrapper(const char *name);
+
+    int         get_int();
+    float       get_float();
+    bool        get_bool();
+    const char *get_string();
+
+    u32  flags();
+    void set_flags(u32 new_flags);
+
+    const char *defualt_value();
+
+    void set_value(int v);
+    void set_value(float v);
+    void set_value(const char *v);
+};
+
+} // namespace sdk

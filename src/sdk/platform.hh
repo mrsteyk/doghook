@@ -41,7 +41,7 @@
 
 #define doghook_platform_debug() false
 
-#if defined(_DEBUG) || defined(DEBUG)
+#if defined(_DEBUG) || defined(DEBUG) && !defined(NDEBUG)
     #undef doghook_platform_debug
     #define doghook_platform_debug() true
 #endif

@@ -19,10 +19,11 @@
 #include "hooks/engine_vgui.hh"
 
 #include "modules/esp.hh"
+#include "modules/misc.hh"
 
 #include "utils/profiler.hh"
 
-static Convar<bool> doghook_profiling_enabled{"doghook_profiling_enabled", false, nullptr};
+static sdk::Convar<bool> doghook_profiling_enabled{"doghook_profiling_enabled", false, nullptr};
 
 // Singleton for doing init / deinit of doghook
 // and dealing with hooks from gamesystem
@@ -104,6 +105,9 @@ public:
                     "client", "8B 0D ? ? ? ? 8B 01 FF 50 28 56", 2));
         else if constexpr (doghook_platform::linux())
             IFace<sdk::MoveHelper>().set_from_pointer(nullptr);
+
+        IFace<sdk::InputSystem>().set_from_interface("inputsystem", "InputSystemVersion");
+
         inited = true;
     }
 
@@ -125,11 +129,13 @@ public:
         sdk::Netvar::init_all();
 
         // register all convars now that we have the interfaces we need
-        ConvarBase::init_all();
+        sdk::ConvarBase::init_all();
 
         // Setup drawing and paint hook
         sdk::draw::init(sdk::draw::RenderTarget::surface);
         paint_hook::init_all();
+
+        misc::init_all();
 
         // at this point we are now inited and ready to go!
         inited = true;

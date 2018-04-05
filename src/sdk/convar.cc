@@ -1,5 +1,7 @@
 #include "precompiled.hh"
 
+#include <mutex>
+
 #include "convar.hh"
 
 #include "interface.hh"
@@ -272,7 +274,6 @@ public:
 };
 
 ConCommandBase *ConCommandBase::head;
-} // namespace sdk
 
 const ConvarBase *ConvarBase::head = nullptr;
 
@@ -300,8 +301,18 @@ void ConvarBase::tf_convar_changed(sdk::IConVar *iconvar, const char *old_string
     }
 }
 
-ConvarBase::ConvarBase(const char *name, ConvarType type, const ConvarBase *parent) : parent(parent), t(type), next(head), init_complete(false) {
-    head = this;
+std::mutex *constructor_mutex;
+
+ConvarBase::ConvarBase(const char *name, ConvarType type, const ConvarBase *parent) : init_complete(false) {
+    if (constructor_mutex == nullptr) constructor_mutex = new std::mutex;
+
+    std::lock_guard<std::mutex> lock{*constructor_mutex};
+
+    this->next = head;
+    head       = this;
+
+    this->parent = parent;
+    this->t      = type;
 
 #if doghook_platform_windows()
     strcpy_s(internal_name, name);
@@ -327,6 +338,8 @@ ConvarBase::~ConvarBase() {
 }
 
 void ConvarBase::init_all() {
+    std::lock_guard<std::mutex> lock{*constructor_mutex};
+
     assert(IFace<sdk::Cvar>());
 
     sdk::can_init_convars_at_construction_time = true;
@@ -350,3 +363,61 @@ void ConvarBase::init_all() {
         c->tf_convar->set_value(c->to_string());
     }
 }
+
+// TODO: this needs a better method of keeping in sync with the
+// Interface declaration in doghook.cc
+Cvar *get_or_init_cvar() {
+    if (IFace<Cvar>().get() == nullptr) {
+        IFace<Cvar>().set_from_interface("vstdlib", "VEngineCvar");
+    }
+
+    return IFace<Cvar>().get();
+}
+
+ConvarWrapper::ConvarWrapper(const char *name) {
+    assert(name);
+    base = get_or_init_cvar()->find_var(name);
+    assert(base);
+}
+
+int ConvarWrapper::get_int() {
+    return base->value_int;
+}
+
+float ConvarWrapper::get_float() {
+    return base->value_float;
+}
+
+bool ConvarWrapper::get_bool() {
+    return !!base->value_int;
+}
+
+const char *ConvarWrapper::get_string() {
+    return base->value_string;
+}
+
+u32 ConvarWrapper::flags() {
+    return base->flags;
+}
+
+void ConvarWrapper::set_flags(u32 new_flags) {
+    base->flags = new_flags;
+}
+
+const char *ConvarWrapper::defualt_value() {
+    return base->default_value;
+}
+
+void ConvarWrapper::set_value(int v) {
+    base->set_value(v);
+}
+
+void ConvarWrapper::set_value(float v) {
+    base->set_value(v);
+}
+
+void ConvarWrapper::set_value(const char *v) {
+    base->set_value(v);
+}
+
+} // namespace sdk

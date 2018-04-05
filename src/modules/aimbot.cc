@@ -2,7 +2,6 @@
 
 #include "aimbot.hh"
 
-// TODO:
 #include "backtrack.hh"
 
 #include "sdk/class_id.hh"
@@ -23,7 +22,11 @@
 using namespace sdk;
 
 namespace aimbot {
-using Target = std::pair<Entity *, math::Vector>;
+struct Target {
+    Entity *     e;
+    math::Vector v;
+    u32          cmd_delta;
+};
 
 std::vector<Target> targets;
 
@@ -34,10 +37,6 @@ Weapon *local_weapon;
 
 int          local_team;
 math::Vector local_view;
-
-// TODO: HORRIBLE HACK
-// this needs to be done on a per target basis and not like this !!!
-u32 cmd_delta = 0;
 
 // Check it a point is visible to the player
 static auto visible_no_entity(const math::Vector &position) {
@@ -182,7 +181,7 @@ auto visible_target_inner(Player *player, std::pair<int, bool> best_box, u32 cur
     return false;
 }
 
-auto visible_target(Entity *e, math::Vector &pos) {
+auto visible_target(Entity *e, math::Vector &pos, u32 &cmd_delta) {
     profiler_profile_function();
 
     // TODO: should entity have a to_player_nocheck() method
@@ -197,7 +196,7 @@ auto visible_target(Entity *e, math::Vector &pos) {
 
     auto current_tick  = IFace<Globals>()->tickcount;
     auto best_box      = find_best_box();
-    auto reverse_order = !!doghook_aimbot_reverse_backtrack_order;
+    bool reverse_order = doghook_aimbot_reverse_backtrack_order;
 
     if (!reverse_order) {
         // Do no backtrack first
@@ -208,8 +207,8 @@ auto visible_target(Entity *e, math::Vector &pos) {
     if (!doghook_aimbot_enable_backtrack) return false;
 
     // If we are going in reverse order then make sure that happens
-    const auto delta_delta = doghook_aimbot_reverse_backtrack_order ? -1 : 1;
-    auto       delta       = doghook_aimbot_reverse_backtrack_order ? backtrack::max_ticks : 0;
+    const auto delta_delta = reverse_order ? -1 : 1;
+    auto       delta       = reverse_order ? backtrack::max_ticks : 0;
 
     u32 new_tick;
 
@@ -244,9 +243,7 @@ auto valid_target(Entity *e) {
 }
 
 void finished_target(Target t) {
-    assert(t.first != nullptr);
-
-    IFace<DebugOverlay>()->add_entity_text_overlay(t.first->index(), 2, 0, 255, 255, 255, 255, "finished");
+    IFace<DebugOverlay>()->add_entity_text_overlay(t.e->index(), 2, 0, 255, 255, 255, 255, "finished");
 
     targets.push_back(t);
 }
@@ -254,13 +251,11 @@ void finished_target(Target t) {
 auto sort_targets() {
     profiler_profile_function();
 
+    auto count = targets.size();
+
     std::sort(targets.begin(), targets.end(),
               [](const Target &a, const Target &b) {
-                  // Ignore null targets (artifact of having a resized vector mess
-                  if (a.first == nullptr) return false;
-                  if (b.first == nullptr) return false;
-
-                  return a.second.distance(local_view) < b.second.distance(local_view);
+                  return a.v.distance(local_view) < b.v.distance(local_view);
               });
 }
 
@@ -276,9 +271,10 @@ auto find_targets() {
         if (e->dormant()) continue;
 
         if (valid_target(e)) {
-            auto pos = math::Vector::invalid();
-            if (visible_target(e, pos)) {
-                finished_target(Target{e, pos});
+            auto pos   = math::Vector::invalid();
+            auto delta = 0u;
+            if (visible_target(e, pos, delta)) {
+                finished_target(Target{e, pos, delta});
 
                 // Now that we have a target break!
                 // TODO: only do this when we want to do speedy targets!
@@ -329,11 +325,15 @@ static auto try_autoshoot(sdk::UserCmd *cmd) {
     auto autoshoot_allowed = false;
 
     // Only allow autoshoot when we are zoomed and can get headshots
-    if (local_weapon->client_class()->class_id == class_id::CTFSniperRifle && (local_player->cond() & 2)) {
-        auto player_time = local_player->tick_base() * IFace<Globals>()->interval_per_tick;
-        auto time_delta  = player_time - local_player->fov_time();
+    if (local_weapon->client_class()->class_id == class_id::CTFSniperRifle) {
+        if ((local_player->cond() & 2)) {
+            auto player_time = local_player->tick_base() * IFace<Globals>()->interval_per_tick;
+            auto time_delta  = player_time - local_player->fov_time();
 
-        if (time_delta >= 0.2) autoshoot_allowed = true;
+            if (time_delta >= 0.2) autoshoot_allowed = true;
+        }
+    } else {
+        autoshoot_allowed = true;
     }
 
     if (autoshoot_allowed) cmd->buttons |= 1;
@@ -356,14 +356,16 @@ void create_move(sdk::UserCmd *cmd) {
         if ((cmd->buttons & 1) != 1) return;
     }
 
-    if (targets.size() > 0 && targets[0].first != nullptr) {
-        IFace<DebugOverlay>()->add_box_overlay(targets[0].second, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 255, 255, 0, 100, 0);
+    if (targets.size() > 0 && targets[0].e != nullptr) {
+        auto &target = targets[0];
 
-        math::Vector delta      = targets[0].second - local_view;
-        math::Vector new_angles = delta.to_angle();
-        new_angles              = clamp_angle(new_angles);
+        IFace<DebugOverlay>()->add_box_overlay(target.v, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 255, 255, 0, 100, 0);
 
-        math::Vector new_movement = fix_movement_for_new_angles({cmd->forwardmove, cmd->sidemove, 0}, cmd->viewangles, new_angles);
+        auto delta      = target.v - local_view;
+        auto new_angles = delta.to_angle();
+        new_angles      = clamp_angle(new_angles);
+
+        auto new_movement = fix_movement_for_new_angles({cmd->forwardmove, cmd->sidemove, 0}, cmd->viewangles, new_angles);
 
         if (local_weapon->can_shoot(local_player->tick_base())) {
             cmd->viewangles = new_angles;
@@ -373,8 +375,8 @@ void create_move(sdk::UserCmd *cmd) {
             cmd->forwardmove = new_movement.x;
             cmd->sidemove    = new_movement.y;
 
-            logging::msg("cmd_delta = %d", cmd_delta);
-            cmd->tick_count -= cmd_delta;
+            logging::msg("cmd_delta = %d", target.cmd_delta);
+            cmd->tick_count -= target.cmd_delta;
         }
 
         if (doghook_aimbot_silent == false) IFace<Engine>()->set_view_angles(new_angles);

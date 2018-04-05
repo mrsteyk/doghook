@@ -43,6 +43,7 @@ public:
 ID(CTFPlayer, 246);
 ID(CTFRevolver, 285);
 ID(CTFSniperRifle, 306);
+ID(CTFFlareGun, 208);
 
 #undef ID
 

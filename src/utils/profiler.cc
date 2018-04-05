@@ -117,13 +117,16 @@ void init() {
     nodes.push_back(root_node);
 }
 
-void enter_node(u32 id, const char *name) {
+#ifdef _MSC_VER
+__declspec(noinline)
+#endif
+    void enter_node(u32 id, const char *name) {
+    if (!enable_profiling) return;
+
     if (current_nodes.size() < 1) {
         // we clearly arent inited yet...
         current_nodes.push(find_root_node());
     }
-
-    if (!enable_profiling) return;
 
     // TODO: maybe we should try and search for nodes that we know are children first??
     auto current_node = current_nodes.top();
@@ -159,10 +162,13 @@ void enter_node(u32 id, const char *name) {
     }
 }
 
-void exit_node() {
-    if (current_nodes.size() < 1) return; // we clearly arent inited yet...
-
+#ifdef _MSC_VER
+__declspec(noinline)
+#endif
+    void exit_node() {
     if (!enable_profiling) return;
+
+    if (current_nodes.size() < 1) return; // we clearly arent inited yet...
 
     auto node = current_nodes.top();
 

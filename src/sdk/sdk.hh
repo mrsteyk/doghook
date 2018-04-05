@@ -8,6 +8,7 @@
 #include "interface.hh"
 #include "signature.hh"
 
+#include "inputcodes.hh"
 #include "trace.hh"
 
 namespace sdk {
@@ -284,6 +285,14 @@ public:
     void unregister_command(ConCommandBase *command) {
         return_virtual_func(unregister_command, 7, 7, 7, 0, command);
     }
+
+    ConCommandBase *root_node() {
+        return_virtual_func(root_node, 16, 16, 16, 0);
+    }
+
+    ConCommandBase *find_var(const char *name) {
+        return_virtual_func(find_var, 12, 12, 12, 0, name);
+    }
 };
 
 class Trace {
@@ -483,6 +492,21 @@ public:
 
 class EngineVgui {
 public:
+};
+
+class InputSystem {
+public:
+    bool is_button_down(ButtonCode code) {
+        return_virtual_func(is_button_down, 11, 11, 11, 0, code);
+    }
+
+    //just to be sure, but above is all we really need since i have all keys enumerated
+    const char *button_code_to_string(ButtonCode code) {
+        return_virtual_func(button_code_to_string, 27, 27, 27, 0, code);
+    }
+    ButtonCode string_to_button_code(const char *string) {
+        return_virtual_func(string_to_button_code, 29, 29, 29, 0, string);
+    }
 };
 
 } // namespace sdk

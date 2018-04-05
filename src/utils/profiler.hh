@@ -61,12 +61,17 @@ ProfileNode *find_root_node();
 class ProfileScope {
 public:
     ProfileScope(const char *name) {
+        if (!profiling_enabled()) return;
+
         // assume that each name is unique
         u32 id = reinterpret_cast<u32>(name);
         enter_node(id, name);
     }
 
-    ~ProfileScope() { exit_node(); };
+    ~ProfileScope() {
+        if (!profiling_enabled()) return;
+        exit_node();
+    }
 };
 
 //#ifdef _DEBUG

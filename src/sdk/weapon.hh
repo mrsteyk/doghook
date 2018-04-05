@@ -10,6 +10,8 @@ public:
     float next_primary_attack();
     float next_secondary_attack();
 
-    Entity * owner();
+    u32 clip1();
+
+    Entity *owner();
 };
 } // namespace sdk
