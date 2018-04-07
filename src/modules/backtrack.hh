@@ -9,7 +9,7 @@ struct PlayerHitboxes;
 } // namespace sdk
 
 namespace backtrack {
-enum { max_ticks = 15 };
+enum { max_ticks = 66 };
 
 void create_move_pre_predict(sdk::UserCmd *cmd);
 void create_move(sdk::UserCmd *cmd);

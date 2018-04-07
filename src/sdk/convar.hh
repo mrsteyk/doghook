@@ -182,15 +182,8 @@ public:
 
         cur_index += 1;
 
-#ifdef _DEBUG
-        memset(temp[cur_index], 0, sizeof(temp));
-#endif
+        snprintf(temp[cur_index % 8], 19, "%d", value);
 
-#if doghook_platform_windows()
-        _itoa_s(value, temp[cur_index % 8], 10);
-#else
-        sprintf(temp[cur_index], "%d", value);
-#endif
         return temp[cur_index % 8];
     }
 
@@ -254,7 +247,7 @@ public:
         cur_index += 1;
 
         // TODO: this is clumsy
-        strncpy(temp[cur_index % 8], std::to_string(value).c_str(), sizeof(temp[0]));
+        snprintf(temp[cur_index % 8], 19, "%f", value);
 
         return temp[cur_index % 8];
     }

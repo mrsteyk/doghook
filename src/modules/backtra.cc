@@ -136,7 +136,7 @@ bool tick_valid(u32 tick) {
     auto lerp_time  = 0.015f;
     auto lerp_ticks = 1;
 
-    auto cmd_arrive_tick = IFace<Globals>()->tickcount + 1 + total_latency_ticks;
+    auto cmd_arrive_tick = IFace<Globals>()->tickcount + 1;
 
     auto correct = std::clamp(lerp_time + latency_outgoing, 0.0f, 0.1f) -
                    IFace<Globals>()->ticks_to_time(cmd_arrive_tick - tick);

@@ -301,13 +301,7 @@ void ConvarBase::tf_convar_changed(sdk::IConVar *iconvar, const char *old_string
     }
 }
 
-std::mutex *constructor_mutex;
-
 ConvarBase::ConvarBase(const char *name, ConvarType type, const ConvarBase *parent) : init_complete(false) {
-    if (constructor_mutex == nullptr) constructor_mutex = new std::mutex;
-
-    std::lock_guard<std::mutex> lock{*constructor_mutex};
-
     this->next = head;
     head       = this;
 
@@ -338,8 +332,6 @@ ConvarBase::~ConvarBase() {
 }
 
 void ConvarBase::init_all() {
-    std::lock_guard<std::mutex> lock{*constructor_mutex};
-
     assert(IFace<sdk::Cvar>());
 
     sdk::can_init_convars_at_construction_time = true;

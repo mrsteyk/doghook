@@ -10,7 +10,7 @@ using namespace sdk;
 
 namespace misc {
 
-sdk::ConvarWrapper sv_cheats{"sv_cheats"};
+static sdk::ConvarWrapper sv_cheats{"sv_cheats"};
 
 void init_all() {
     sv_cheats.set_flags(0);

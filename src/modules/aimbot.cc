@@ -72,13 +72,16 @@ static auto         visible(Entity *e, const math::Vector &position, const int h
     return false;
 }
 
-static auto multipoint_internal(Entity *e, float granularity, const int hitbox, const math::Vector &centre,
+static Convar<float> doghook_aimbot_multipoint_granularity{"doghook_aimbot_multipoint_granularity", 0, 0, 10, nullptr};
+
+static auto multipoint_internal(Entity *e, u32 count, float granularity, const int hitbox, const math::Vector &centre,
                                 const math::Vector &min, const math::Vector &max, math::Vector &out) {
     profiler_profile_function();
 
     // go from centre to centre min first
-    for (float i = 0.0f; i <= 1.0f; i += granularity) {
-        math::Vector point = centre.lerp(min, i);
+    for (u32 i = 1; i < count; i++) {
+        auto         percent = granularity * i;
+        math::Vector point   = centre.lerp(min, percent);
 
         if (visible(e, point, hitbox)) {
             out = point;
@@ -87,8 +90,9 @@ static auto multipoint_internal(Entity *e, float granularity, const int hitbox, 
     }
 
     // now from centre to max
-    for (float i = 0.0f; i <= 1.0f; i += granularity) {
-        math::Vector point = centre.lerp(max, i);
+    for (u32 i = 1; i < count; i++) {
+        auto         percent = granularity * i;
+        math::Vector point   = centre.lerp(max, percent);
 
         if (visible(e, point, hitbox)) {
             out = point;
@@ -99,16 +103,13 @@ static auto multipoint_internal(Entity *e, float granularity, const int hitbox, 
     return false;
 }
 
-// TODO: remove
-static Convar<float> doghook_aimbot_multipoint_granularity{"doghook_aimbot_multipoint_granularity", 0, 0, 10, nullptr};
-
 // TODO: there must be some kind of better conversion we can use here to get a straight line across the hitbox
 static auto multipoint(Player *player, const int hitbox, const math::Vector &centre, const math::Vector &min, const math::Vector &max, math::Vector &position_out) {
     profiler_profile_function();
 
     // create a divisor out of the granularity
     float divisor = doghook_aimbot_multipoint_granularity;
-    if (divisor == 0) return false;
+    if (divisor <= 1) return false;
     float granularity = 1.0f / divisor;
 
     auto new_x = math::lerp(0.5, min.x, max.x);
@@ -117,13 +118,15 @@ static auto multipoint(Player *player, const int hitbox, const math::Vector &cen
     math::Vector centre_min_x = math::Vector(new_x, min.y, centre.z);
     math::Vector centre_max_x = math::Vector(new_x, max.y, centre.z);
 
-    if (multipoint_internal(player, granularity, hitbox, centre, centre_min_x, centre_max_x, position_out))
+    if (multipoint_internal(player, granularity, hitbox, divisor, centre, centre_min_x, centre_max_x, position_out))
         return true;
 
-    math::Vector centre_min_y = math::Vector(min.x, math::lerp(0.5, min.y, max.y), centre.z);
-    math::Vector centre_max_y = math::Vector(max.x, math::lerp(0.5, min.y, max.y), centre.z);
+    auto new_y = math::lerp(0.5, min.x, max.x);
 
-    if (multipoint_internal(player, granularity, hitbox, centre, centre_min_y, centre_max_y, position_out))
+    math::Vector centre_min_y = math::Vector(min.x, new_y, centre.z);
+    math::Vector centre_max_y = math::Vector(max.x, new_y, centre.z);
+
+    if (multipoint_internal(player, granularity, hitbox, divisor, centre, centre_min_y, centre_max_y, position_out))
         return true;
 
     return false;
@@ -180,6 +183,13 @@ auto visible_target_inner(Player *player, std::pair<int, bool> best_box, u32 cur
 
     return false;
 }
+
+// TODO: we need to change the process here...
+// Backtracking affects all players not just the player we are doing visibility checking on
+// therefore backtrack needs a method for reverting all players to a specific state
+
+// To compliment this we can check whether any player is visible first, then check all players in tickcount -1
+// and then -2, so on so forth.
 
 auto visible_target(Entity *e, math::Vector &pos, u32 &cmd_delta) {
     profiler_profile_function();
@@ -250,8 +260,6 @@ void finished_target(Target t) {
 
 auto sort_targets() {
     profiler_profile_function();
-
-    auto count = targets.size();
 
     std::sort(targets.begin(), targets.end(),
               [](const Target &a, const Target &b) {
@@ -367,6 +375,7 @@ void create_move(sdk::UserCmd *cmd) {
 
         auto new_movement = fix_movement_for_new_angles({cmd->forwardmove, cmd->sidemove, 0}, cmd->viewangles, new_angles);
 
+        // TODO: shouldnt this be on the outside instead
         if (local_weapon->can_shoot(local_player->tick_base())) {
             cmd->viewangles = new_angles;
 
@@ -375,7 +384,6 @@ void create_move(sdk::UserCmd *cmd) {
             cmd->forwardmove = new_movement.x;
             cmd->sidemove    = new_movement.y;
 
-            logging::msg("cmd_delta = %d", target.cmd_delta);
             cmd->tick_count -= target.cmd_delta;
         }
 
