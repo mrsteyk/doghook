@@ -91,11 +91,17 @@ public:
         return queued_packets;
     }
 
-    i32 &m_nOutSequenceNr() {
-        static u32 m_nOutSequenceNr_offset = 8; // TODO: don't hardcode
+    // Below this point are functions that use offsets
+    // These offsets should be consistent accross multiple platforms
+    // As the netchannel structure is the same
 
-        return *(i32 *)((u32)this + m_nOutSequenceNr_offset);
-    }
+    template <typename T, u32 offset>
+    auto &get() { return *reinterpret_cast<T *>(reinterpret_cast<uptr>(this) + offset); }
+
+    auto &out_sequence() { return get<u32, 8>(); }
+    auto &in_sequence() { return get<u32, 12>(); }
+    auto &in_reliable_state() { return get<u32, 24>(); }
+    auto &out_reliable_state() { return get<u32, 20>(); }
 };
 
 class Globals {

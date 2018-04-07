@@ -17,6 +17,7 @@
 
 #include "hooks/createmove.hh"
 #include "hooks/engine_vgui.hh"
+#include "hooks/send_datagram.hh"
 
 #include "modules/esp.hh"
 #include "modules/misc.hh"
@@ -137,6 +138,8 @@ public:
 
         misc::init_all();
 
+        logging::msg("DOGHOOK:tm: :joy: :joy: :jo3: :nice:\nBuild: " __DATE__ " " __TIME__);
+
         // at this point we are now inited and ready to go!
         inited = true;
     }
@@ -155,6 +158,7 @@ public:
 
         // Do level init here
         create_move::level_init();
+        send_datagram::level_init();
     }
     void level_shutdown_pre_clear_steam_api_context() override { logging::msg("level_shutdown_pre_clear_steam_api_context"); }
     void level_shutdown_pre_entity() override {
@@ -162,6 +166,7 @@ public:
 
         // Do level_shutdown here
         create_move::level_shutdown();
+        send_datagram::level_shutdown();
     }
     void level_shutdown_post_entity() override { logging::msg("level_shutdown_post_entity"); }
 

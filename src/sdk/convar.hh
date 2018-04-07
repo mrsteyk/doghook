@@ -309,6 +309,8 @@ public:
 class ConvarWrapper {
     ConCommandBase *base;
 
+    ConvarWrapper(ConCommandBase *b) : base(b) {}
+
 public:
     ConvarWrapper(const char *name);
 
@@ -325,6 +327,33 @@ public:
     void set_value(int v);
     void set_value(float v);
     void set_value(const char *v);
+
+    class Range {
+    public:
+        class Iterator {
+            const ConCommandBase *current;
+
+        public:
+            Iterator() : current(nullptr) {}
+            explicit Iterator(const ConCommandBase *b) : current(b) {}
+
+            ConvarWrapper operator++();
+
+            auto operator*() const {
+                assert(current);
+                return ConvarWrapper(const_cast<ConCommandBase *>(current));
+            }
+
+            auto operator==(const Iterator &b) const { return current == b.current; }
+            auto operator!=(const Iterator &b) const { return !(*this == b); }
+        };
+
+        Iterator begin() const;
+
+        Iterator end() const { return Iterator(nullptr); }
+    };
+
+    static auto get_range() { return Range(); }
 };
 
 } // namespace sdk

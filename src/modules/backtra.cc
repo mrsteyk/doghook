@@ -1,9 +1,11 @@
 #include <precompiled.hh>
 
 #include <algorithm>
+#include <queue>
 
 #include "backtrack.hh"
 
+#include <sdk/convar.hh>
 #include <sdk/log.hh>
 #include <sdk/player.hh>
 #include <sdk/sdk.hh>
@@ -84,6 +86,7 @@ public:
     u32            max_hitboxes;
 
     // misc
+    u8      life_state;
     float   simulation_time;
     float   animation_time;
     float   choked_time;
@@ -123,25 +126,91 @@ auto &current_record(u32 index) { return record(index, current_tick); }
 // Players that have been moved this tick and need restoring
 std::vector<sdk::Player *> players_to_restore;
 
+struct sequence {
+    u32   in_state;
+    u32   out_state;
+    u32   in_sequence;
+    u32   out_sequence;
+    float cur_time;
+};
+
+std::deque<sequence> sequences;
+u32                  last_incoming_sequence;
+
+Convar<float> doghook_backtrack_latency{"doghook_backtrack_latency", 0, 0, 1, nullptr};
+
+void add_latency_to_netchannel(NetChannel *c) {
+    float current_time = IFace<Globals>()->realtime;
+    for (auto &s : sequences) {
+        if (current_time - s.cur_time > doghook_backtrack_latency) {
+            c->in_reliable_state() = s.in_state;
+            c->in_sequence()       = s.in_sequence;
+
+            break;
+        }
+    }
+}
+
+void update_incoming_sequences() {
+    NetChannel *c = IFace<Engine>()->net_channel_info();
+
+    auto incoming_sequence = c->in_sequence();
+
+    if (incoming_sequence > last_incoming_sequence) {
+        last_incoming_sequence = incoming_sequence;
+
+        sequences.push_front({c->in_reliable_state(), c->out_reliable_state(), c->in_sequence(), c->out_sequence(), IFace<Globals>()->realtime});
+    }
+
+    if (sequences.size() > 2048)
+        sequences.pop_back();
+}
+
 auto latency_outgoing    = 0.0f;
 auto latency_incoming    = 0.0f;
 auto total_latency_time  = 0.0f;
 u32  total_latency_ticks = 0;
 
+sdk::ConvarWrapper cl_interp{"cl_interp"};
+
+sdk::ConvarWrapper cl_interp_ratio{"cl_interp_ratio"};
+sdk::ConvarWrapper cl_update_rate{"cl_updaterate"};
+
+sdk::ConvarWrapper sv_client_min_interp_ratio{"sv_client_min_interp_ratio"};
+sdk::ConvarWrapper sv_client_max_interp_ratio{"sv_client_max_interp_ratio"};
+
+sdk::ConvarWrapper sv_minupdaterate{"sv_minupdaterate"};
+sdk::ConvarWrapper sv_maxupdaterate{"sv_maxupdaterate"};
+
+sdk::ConvarWrapper sv_maxunlag{"sv_maxunlag"};
+
+float lerp_time() {
+    auto interp_ratio = std::clamp(cl_interp_ratio.get_float(), sv_client_min_interp_ratio.get_float(), sv_client_max_interp_ratio.get_float());
+    auto update_rate  = std::clamp(cl_update_rate.get_float(), sv_minupdaterate.get_float(), sv_maxupdaterate.get_float());
+
+    auto lerp_time = std::max(interp_ratio / update_rate, cl_interp.get_float());
+
+    return lerp_time;
+}
+
 bool tick_valid(u32 tick) {
     auto net_channel = IFace<Engine>()->net_channel_info();
 
-    // TODO: do not hardcode
-    // Assuming lowest possible
-    auto lerp_time  = 0.015f;
-    auto lerp_ticks = 1;
+    auto lerp       = lerp_time();
+    auto lerp_ticks = IFace<Globals>()->time_to_ticks(lerp);
 
-    auto cmd_arrive_tick = IFace<Globals>()->tickcount + 1;
+    auto correct = std::clamp(lerp + doghook_backtrack_latency + latency_outgoing, 0.0f, sv_maxunlag.get_float());
 
-    auto correct = std::clamp(lerp_time + latency_outgoing, 0.0f, 0.1f) -
-                   IFace<Globals>()->ticks_to_time(cmd_arrive_tick - tick);
+    auto delta_time = correct - IFace<Globals>()->ticks_to_time(IFace<Globals>()->tickcount + 1 + lerp_ticks - tick);
 
-    return std::abs(correct) <= 0.2;
+    bool valid = std::abs(delta_time) <= 0.2;
+
+    if (!valid) {
+        auto new_tick = IFace<Globals>()->tickcount - IFace<Globals>()->time_to_ticks(correct);
+        //logging::msg("[Backtracking] !valid (%d -> %d d: %d)", tick, new_tick, new_tick - tick);
+    }
+
+    return valid;
 }
 
 // Update player to this record
@@ -219,16 +288,20 @@ static bool restore_player_to_record(sdk::Player *p, const Record &r) {
 }
 
 // Backtrack a player to this tick
-bool backtrack_player_to_tick(sdk::Player *p, u32 tick, bool restoring) {
+bool backtrack_player_to_tick(sdk::Player *p, u32 tick, bool set_alive, bool restoring) {
     profiler_profile_function();
 
     auto array_index = entity_index_to_array_index(p->index());
 
     auto &r = record(array_index, tick);
-    if (!r.alive) return false;
+
+    if (set_alive) p->life_state() = r.life_state;
 
     if (!restoring) players_to_restore.push_back(p);
-    return restore_player_to_record(p, r);
+
+    bool success = restore_player_to_record(p, r);
+
+    return success;
 }
 
 // Set the hitboxes for this player at this tick
@@ -243,21 +316,25 @@ void update_player_hitboxes(sdk::Player *p, const sdk::PlayerHitboxes &hitboxes,
 
 // Get the hitboxes for this player at this tick
 // TODO: this can probably just return a const pointer to the hitboxes inside the record
-void hitboxes_for_player(sdk::Player *p, u32 tick, sdk::PlayerHitboxes &hitboxes) {
+u32 hitboxes_for_player(sdk::Player *p, u32 tick, sdk::PlayerHitboxes &hitboxes) {
     profiler_profile_function();
 
     auto array_index = entity_index_to_array_index(p->index());
 
     auto &r = record(array_index, tick);
 
-    if (!r.alive) return;
+    if (!r.alive) return 0;
 
     std::memcpy(&hitboxes, &r.hitboxes, sizeof(PlayerHitboxes));
+
+    return r.max_hitboxes;
 }
 
 // Get new information about each player
 void create_move_pre_predict(sdk::UserCmd *cmd) {
     profiler_profile_function();
+
+    update_incoming_sequences();
 
     current_tick = IFace<Globals>()->tickcount;
 
@@ -286,7 +363,8 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
         // Clean out the record - might not be necessary but a memset is pretty cheap
         new_record.reset();
 
-        new_record.alive = player->alive();
+        new_record.life_state = player->life_state();
+        new_record.alive      = player->alive();
         if (player->dormant()) new_record.alive = false;
 
         // If this fails then it is clear to other algorithms whether this record is valid just by looking at this bool
@@ -330,7 +408,7 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
             new_record.animation_layers[i] = player->anim_layer(i);
         }
 
-        // TODO: pose parameters (are these even important??)
+        new_record.max_hitboxes = player->hitboxes(&new_record.hitboxes, false);
     }
 }
 
@@ -343,12 +421,16 @@ void create_move(sdk::UserCmd *cmd) {
 
         auto player = entity->to_player();
         if (auto player = entity->to_player()) {
-            //            for (auto &r : record_track(player->index()))
-            {
-                auto &r = record(player->index(), IFace<Globals>()->tickcount + 1);
+            for (auto &r : record_track(player->index())) {
+                //auto &r = record(player->index(), IFace<Globals>()->tickcount + 1);
 
                 if (!r.alive) continue;
 
+                if (!tick_valid(r.this_tick)) continue;
+
+                IFace<DebugOverlay>()->add_box_overlay(r.origin, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 0, 255, 0, 100, 0);
+
+#if 0
                 auto &hitboxes = r.hitboxes;
                 for (u32 i = 0; i < r.max_hitboxes; i++) {
 
@@ -358,8 +440,6 @@ void create_move(sdk::UserCmd *cmd) {
                     auto b = (int)(255.0f * hullcolor[j].z);
 
                     IFace<DebugOverlay>()->add_box_overlay(hitboxes.origin[i], hitboxes.raw_min[i], hitboxes.raw_max[i], hitboxes.rotation[i], r, g, b, 100, 0);
-
-                    auto bone_transform = hitboxes.bone_to_world[i];
 
                     //math::Vector origin;
                     //math::Vector angles;
@@ -371,19 +451,64 @@ void create_move(sdk::UserCmd *cmd) {
 
                     //IFace<DebugOverlay>()->add_box_overlay(origin, hitboxes.raw_min[i], hitboxes.raw_max[i], angles, r, g, b, 100, 0);
                 }
+#endif
             }
         }
     }
 #endif
 }
 
+void restore_all_players() {
+    for (auto &p : players_to_restore)
+        backtrack_player_to_tick(p, current_tick, true, true);
+
+    players_to_restore.clear();
+}
+
 void create_move_finish(sdk::UserCmd *cmd) {
     profiler_profile_function();
 
     // Cleanup from whatever has been done
-    for (auto &p : players_to_restore)
-        backtrack_player_to_tick(p, current_tick, true);
+    restore_all_players();
+}
 
-    players_to_restore.clear();
+bool rewind_state_active = false;
+RewindState::RewindState() {
+    assert(!rewind_state_active);
+
+    rewind_state_active = true;
+}
+
+RewindState::~RewindState() {
+    restore_all_players();
+
+    rewind_state_active = false;
+}
+
+// TODO: if a player isnt alive at a record then we need a way
+// of effectively eliminating their bones from traceray
+void RewindState::to_tick(u32 t) {
+    // TODO: could this be multithreaded effectively?
+
+    auto local_player = Player::local();
+
+    for (auto entity : IFace<EntList>()->get_range(IFace<Engine>()->max_clients() + 1)) {
+        if (!entity->is_valid()) continue;
+
+        if (auto p = entity->to_player()) {
+            if (p == local_player) continue;
+
+            if (p->team() == local_player->team()) continue;
+
+            // Setalive so that dead players at this tick are dead...
+            // This means that aimbots is_valid will work properly
+            auto success = backtrack_player_to_tick(p, t, true);
+
+            if (!success) {
+                // Player isnt valid this tick...
+                // TODO: Set hitboxes to invalid here...
+            }
+        }
+    }
 }
 } // namespace backtrack

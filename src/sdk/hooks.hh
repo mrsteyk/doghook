@@ -181,7 +181,7 @@ public:
         using F = ret(__thiscall *)(T *, Args...);
 #endif
         auto function = reinterpret_cast<F>(original_function);
-        function(instance, args...);
+        return function(instance, args...);
     }
 };
 

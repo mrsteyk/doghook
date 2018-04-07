@@ -62,6 +62,7 @@ public:
     // netvars
     int &health();
 
+    u8 & life_state();
     bool alive();
     int  team();
 

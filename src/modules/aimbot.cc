@@ -147,13 +147,12 @@ static auto find_best_box() {
 static Convar<bool> doghook_aimbot_enable_backtrack{"doghook_aimbot_enable_backtrack", true, nullptr};
 static Convar<bool> doghook_aimbot_reverse_backtrack_order{"doghook_aimbot_reverse_backtrack_order", true, nullptr};
 
-auto visible_target_inner(Player *player, std::pair<int, bool> best_box, u32 current_tick, u32 delta, PlayerHitboxes &hitboxes, u32 hitboxes_count, math::Vector &pos) {
-    if (delta > 0) {
-        auto success = backtrack::backtrack_player_to_tick(player, current_tick - delta);
-        if (success == false) return false;
+auto visible_target_inner(Player *player, std::pair<int, bool> best_box, u32 tick, math::Vector &pos) {
+    PlayerHitboxes hitboxes;
+    u32            hitboxes_count;
 
-        backtrack::hitboxes_for_player(player, current_tick - delta, hitboxes);
-    }
+    hitboxes_count = backtrack::hitboxes_for_player(player, tick, hitboxes);
+
     // check best hitbox first
     if (visible(player, hitboxes.centre[best_box.first], best_box.first)) {
         pos = hitboxes.centre[best_box.first];
@@ -191,52 +190,11 @@ auto visible_target_inner(Player *player, std::pair<int, bool> best_box, u32 cur
 // To compliment this we can check whether any player is visible first, then check all players in tickcount -1
 // and then -2, so on so forth.
 
-auto visible_target(Entity *e, math::Vector &pos, u32 &cmd_delta) {
+auto visible_player(Player *p, std::pair<int, bool> &best_box, u32 tick, math::Vector &pos) {
     profiler_profile_function();
 
-    // TODO: should entity have a to_player_nocheck() method
-    // as we already know at this point that this is a player...
-    auto player = e->to_player();
-
-    PlayerHitboxes hitboxes;
-    auto           hitboxes_count = player->hitboxes(&hitboxes, false);
-
-    // Tell backtrack about these hitboxes
-    backtrack::update_player_hitboxes(player, hitboxes, hitboxes_count);
-
-    auto current_tick  = IFace<Globals>()->tickcount;
-    auto best_box      = find_best_box();
-    bool reverse_order = doghook_aimbot_reverse_backtrack_order;
-
-    if (!reverse_order) {
-        // Do no backtrack first
-        auto visible = visible_target_inner(player, best_box, current_tick, 0, hitboxes, hitboxes_count, pos);
-        if (visible) return true;
-    }
-
-    if (!doghook_aimbot_enable_backtrack) return false;
-
-    // If we are going in reverse order then make sure that happens
-    const auto delta_delta = reverse_order ? -1 : 1;
-    auto       delta       = reverse_order ? backtrack::max_ticks : 0;
-
-    u32 new_tick;
-
-    do {
-        // Go onto the next tick and see what
-        delta += delta_delta;
-        new_tick = current_tick - delta;
-        if (!backtrack::tick_valid(new_tick)) continue;
-
-        if (backtrack::backtrack_player_to_tick(player, current_tick - delta)) {
-            auto visible = visible_target_inner(player, best_box, current_tick, delta, hitboxes, hitboxes_count, pos);
-            if (visible) {
-                cmd_delta = delta;
-                return true;
-            }
-        }
-
-    } while (delta > 0 && delta < backtrack::max_ticks);
+    auto visible = visible_target_inner(p, best_box, tick, pos);
+    if (visible) return true;
 
     return false;
 }
@@ -253,7 +211,8 @@ auto valid_target(Entity *e) {
 }
 
 void finished_target(Target t) {
-    IFace<DebugOverlay>()->add_entity_text_overlay(t.e->index(), 2, 0, 255, 255, 255, 255, "finished");
+    IFace<DebugOverlay>()->add_entity_text_overlay(t.e->index(), 1, 0, 255, 255, 255, 255, "finished");
+    IFace<DebugOverlay>()->add_entity_text_overlay(t.e->index(), 2, 0, 255, 255, 255, 255, "%d", t.cmd_delta);
 
     targets.push_back(t);
 }
@@ -270,26 +229,66 @@ auto sort_targets() {
 auto find_targets() {
     profiler_profile_function();
 
-    if (can_find_targets == false) return;
+    auto best_box = find_best_box();
 
-    // find targets
-    // TODO: clean up this mess
-    for (auto e : IFace<EntList>()->get_range()) {
-        if (!e->is_valid()) continue;
-        if (e->dormant()) continue;
+    auto find_target_inner = [&best_box](u32 tick, u32 delta) {
+        for (auto e : IFace<EntList>()->get_range()) {
+            if (!e->is_valid()) continue;
 
-        if (valid_target(e)) {
-            auto pos   = math::Vector::invalid();
-            auto delta = 0u;
-            if (visible_target(e, pos, delta)) {
-                finished_target(Target{e, pos, delta});
+            if (valid_target(e)) {
+                auto pos = math::Vector::invalid();
 
-                // Now that we have a target break!
-                // TODO: only do this when we want to do speedy targets!
-                //break;
+                if (auto p = e->to_player()) {
+                    if (visible_player(p, best_box, tick, pos)) {
+                        finished_target(Target{e, pos, delta});
+
+                        // Now that we have a target break!
+                        // TODO: only do this when we want to do speedy targets!
+                        //break;
+                    }
+                }
             }
         }
+    };
+
+    auto current_tick = IFace<Globals>()->tickcount;
+
+    bool reverse_order = doghook_aimbot_reverse_backtrack_order;
+
+    // Easy out
+    if (!reverse_order || !doghook_aimbot_enable_backtrack) {
+        find_target_inner(current_tick, 0);
+        if (targets.size() > 0) {
+            sort_targets();
+            return;
+        }
     }
+
+    if (!doghook_aimbot_enable_backtrack) return;
+
+    const auto delta_delta = reverse_order ? -1 : 1;
+    auto       delta       = reverse_order ? backtrack::max_ticks : 1;
+
+    u32 new_tick;
+
+    backtrack::RewindState rewind;
+
+    do {
+        new_tick = current_tick - delta;
+
+        if (backtrack::tick_valid(new_tick)) {
+            rewind.to_tick(new_tick);
+
+            find_target_inner(new_tick, delta);
+
+            // we found some targets for this state... stop
+            if (targets.size() > 0) break;
+        }
+
+        // Move to the next tick
+        delta += delta_delta;
+        new_tick = current_tick - delta;
+    } while (delta > 0 && delta < backtrack::max_ticks);
 
     sort_targets();
 }

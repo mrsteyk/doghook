@@ -412,4 +412,11 @@ void ConvarWrapper::set_value(const char *v) {
     base->set_value(v);
 }
 
+ConvarWrapper ConvarWrapper::Range::Iterator::operator++() {
+    current = current->next;
+    return ConvarWrapper(const_cast<ConCommandBase *>(current));
+}
+
+ConvarWrapper::Range::Iterator ConvarWrapper::Range::begin() const { return Iterator(IFace<Cvar>()->root_node()); }
+
 } // namespace sdk

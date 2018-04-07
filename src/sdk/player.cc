@@ -21,7 +21,11 @@ int &       Player::health() {
 }
 
 static auto lifestate = Netvar("DT_BasePlayer", "m_lifeState");
-bool        Player::alive() {
+u8 &        Player::life_state() {
+    return ::lifestate.get<u8>(this);
+}
+
+bool Player::alive() {
     return ::lifestate.get<u8>(this) == 0;
 }
 
