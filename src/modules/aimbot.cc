@@ -344,8 +344,11 @@ static auto try_autoshoot(sdk::UserCmd *cmd) {
     }
 
     if (autoshoot_allowed) cmd->buttons |= 1;
+
+    return autoshoot_allowed;
 }
 
+static Convar<bool> doghook_aimbot_always_aim                   = Convar<bool>{"doghook_aimbot_always_aim", false, nullptr};
 static Convar<bool> doghook_aimbot_silent                       = Convar<bool>{"doghook_aimbot_silent", true, nullptr};
 static Convar<bool> doghook_aimbot_autoshoot                    = Convar<bool>{"doghook_aimbot_autoshoot", true, nullptr};
 static Convar<bool> doghook_aimbot_aim_if_not_attack            = Convar<bool>{"doghook_aimbot_aim_if_not_attack", true, nullptr};
@@ -372,18 +375,19 @@ void create_move(sdk::UserCmd *cmd) {
         auto new_angles = delta.to_angle();
         new_angles      = clamp_angle(new_angles);
 
-        auto new_movement = fix_movement_for_new_angles({cmd->forwardmove, cmd->sidemove, 0}, cmd->viewangles, new_angles);
-
         // TODO: shouldnt this be on the outside instead
         if (local_weapon->can_shoot(local_player->tick_base())) {
-            cmd->viewangles = new_angles;
+            auto shot = (doghook_aimbot_autoshoot && try_autoshoot(cmd)) || (cmd->buttons & 1);
 
-            if (doghook_aimbot_autoshoot == true) try_autoshoot(cmd);
+            if (shot || doghook_aimbot_always_aim) {
+                auto new_movement = fix_movement_for_new_angles({cmd->forwardmove, cmd->sidemove, 0}, cmd->viewangles, new_angles);
+                cmd->viewangles   = new_angles;
 
-            cmd->forwardmove = new_movement.x;
-            cmd->sidemove    = new_movement.y;
+                cmd->forwardmove = new_movement.x;
+                cmd->sidemove    = new_movement.y;
 
-            cmd->tick_count -= target.cmd_delta;
+                cmd->tick_count -= target.cmd_delta;
+            }
         }
 
         if (doghook_aimbot_silent == false) IFace<Engine>()->set_view_angles(new_angles);

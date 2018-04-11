@@ -25,14 +25,34 @@
 #include "utils/profiler.hh"
 
 static sdk::Convar<bool> doghook_profiling_enabled{"doghook_profiling_enabled", false, nullptr};
+static sdk::Convar<bool> doghook_unload_now{"doghook_unload_now", false, nullptr};
 
 // Singleton for doing init / deinit of doghook
 // and dealing with hooks from gamesystem
 
+extern class Doghook doghook;
+
 class Doghook : public GameSystem {
+public:
     bool inited = false;
 
-public:
+#if doghook_platform_windows()
+    HMODULE doghook_module_handle;
+#endif
+
+    static void await_shutdown() {
+        while (!doghook_unload_now) std::this_thread::yield();
+
+#if doghook_platform_windows()
+        // TODO: the CRT should be able to take care of all our hooks as they are all declared
+        // as unique_ptrs...
+
+        // All other memory should be cleaned up in destructors that happen at init_time or deinit_time!!
+        // TODO: make sure that all memory is getting cleaned properly!
+        FreeLibrary(doghook.doghook_module_handle);
+#endif
+    }
+
     bool init() override {
         // Guard against having init() called by the game and our constructor
         static bool init_happened = false;
@@ -122,7 +142,6 @@ public:
 
         // make sure that the profiler is inited first
         profiler::init();
-        doghook_profiling_enabled = profiler::profiling_enabled();
 
         // make sure that the netvars are initialised
         // becuase their dynamic initialiser could be after the
@@ -142,6 +161,14 @@ public:
 
         // at this point we are now inited and ready to go!
         inited = true;
+
+        std::thread{&await_shutdown}.detach();
+
+        // If we are already in game then do the level inits
+        if (IFace<sdk::Engine>()->in_game()) {
+            level_init_pre_entity();
+            level_init_post_entity();
+        }
     }
 
     void shutdown() override {}
@@ -174,9 +201,11 @@ public:
     // in theory we should be able to render here
     // and be perfectly ok
     // HOWEVER: it might be better to do this at frame_end()
-    void update([[maybe_unused]] float frametime) override {
+    void update(float frametime) override {
         if (inited != true) return;
         profiler::set_profiling_enabled(doghook_profiling_enabled);
+
+        misc::update(frametime);
     }
 
     Doghook() {
@@ -187,9 +216,11 @@ public:
 Doghook doghook;
 
 #if doghook_platform_windows()
-u32 __stdcall doghook_process_attach([[maybe_unused]] void *hmodule) {
+u32 __stdcall doghook_process_attach(void *hmodule) {
     // TODO: pass module over to the gamesystem
     doghook.process_attach();
+
+    doghook.doghook_module_handle = (HMODULE)hmodule;
 
     return 0;
 }

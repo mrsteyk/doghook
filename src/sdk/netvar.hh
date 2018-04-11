@@ -10,17 +10,17 @@ class Netvar {
 
     class Tree {
 
-        struct node;
-        using netvar_tree = std::vector<std::pair<const char *, node *>>;
+        struct Node;
+        using TreeNode = std::vector<std::pair<const char *, std::shared_ptr<Node>>>;
 
-        struct node {
-            netvar_tree     children;
+        struct Node {
+            TreeNode        children;
             class RecvProp *p;
         };
 
-        netvar_tree prop_tree;
+        TreeNode prop_tree;
 
-        void populate_recursive(class RecvTable *t, netvar_tree *nodes);
+        void populate_recursive(class RecvTable *t, TreeNode *nodes);
 
     public:
         Tree();
@@ -52,6 +52,8 @@ public:
     auto &get(void *instance) {
         return *reinterpret_cast<T *>(static_cast<char *>(instance) + offset);
     }
+
+    void offset_delta(u32 d) { offset += d; }
 
     static void init_all();
 };

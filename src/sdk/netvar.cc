@@ -8,10 +8,10 @@ using namespace sdk;
 
 static Netvar *head;
 
-void Netvar::Tree::populate_recursive(RecvTable *t, netvar_tree *nodes) {
+void Netvar::Tree::populate_recursive(RecvTable *t, TreeNode *nodes) {
     for (auto i = 0; i < t->prop_count; i++) {
         auto *     prop     = t->prop(i);
-        const auto new_node = new node();
+        const auto new_node = std::make_shared<Node>();
         new_node->p         = prop;
 
         if (prop->recv_type == 6) populate_recursive(prop->as_datatable(), &new_node->children);
@@ -28,7 +28,7 @@ void Netvar::Tree::init() {
 
     auto cc = IFace<Client>()->get_all_classes();
     while (cc != nullptr) {
-        const auto new_node = new node();
+        const auto new_node = std::make_shared<Node>();
         new_node->p         = nullptr;
 
         populate_recursive(cc->recv_table, &new_node->children);

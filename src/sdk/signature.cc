@@ -109,7 +109,9 @@ void *signature::resolve_library(const char *name) {
 
     auto handle = GetModuleHandleA(buffer);
 
-    assert(handle);
+    // TODO: this is commented out to mimic linux behaviour
+    // TODO: do we really want this??
+    //assert(handle);
 
     return handle;
 
@@ -136,8 +138,8 @@ void *signature::resolve_library(const char *name) {
         search_directory(name, "./bin", found)) {
         auto handle = dlopen(found, RTLD_NOLOAD);
         if (handle == nullptr) {
-            printf("force loading library %s\n", name);
-            handle = dlopen(found, RTLD_NOW);
+            //printf("force loading library %s\n", name);
+            //handle = dlopen(found, RTLD_NOW);
         }
         return handle;
     }

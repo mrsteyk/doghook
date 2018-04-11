@@ -115,10 +115,10 @@ public:
 
 template <typename T, u32 offset>
 class HookFunction {
-    static std::vector<HookInstance<T, offset> *> hooks;
+    static std::vector<std::shared_ptr<HookInstance<T, offset>>> hooks;
 
     auto create_hook_instance(T *instance) {
-        auto h = new HookInstance<T, offset>(instance);
+        auto h = std::make_shared<HookInstance<T, offset>>(instance);
         hooks.push_back(h);
         return h;
     }
@@ -130,7 +130,7 @@ class HookFunction {
 public:
     HookFunction(T *instance, u32 index_windows, u32 index_linux, u32 index_osx, void *f) {
         assert(instance);
-        HookInstance<T, offset> *val = nullptr;
+        std::shared_ptr<HookInstance<T, offset>> val;
 
         for (auto &v : hooks) {
             if (v->get_instance() == instance) {
@@ -186,6 +186,6 @@ public:
 };
 
 template <typename T, u32 offset>
-std::vector<HookInstance<T, offset> *> HookFunction<T, offset>::hooks;
+std::vector<std::shared_ptr<HookInstance<T, offset>>> HookFunction<T, offset>::hooks;
 
 } // namespace hooks
