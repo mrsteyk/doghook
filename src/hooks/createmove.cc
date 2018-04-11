@@ -2,22 +2,33 @@
 
 #include "sdk/sdk.hh"
 
-#include "modules/backtrack.hh"
 #include "sdk/hooks.hh"
 #include "sdk/log.hh"
 #include "sdk/player.hh"
 
 #include "modules/aimbot.hh"
-
+#include "modules/anti_aim.hh"
+#include "modules/backtrack.hh"
 #include "modules/lagexploit.hh"
+#include "modules/misc.hh"
 
 #include "utils/math.hh"
 
 #include "utils/profiler.hh"
 
+#if doghook_platform_windows()
+#include <intrin.h>
+#endif
+
 using namespace sdk;
 
 namespace create_move {
+bool *send_packet_ptr = nullptr;
+
+bool *send_packet() {
+    return send_packet_ptr;
+}
+
 // TODO: should probably move elsewhere
 static inline auto local_player_prediction(Player *local, UserCmd *cmd) {
     char move_data_buffer[512];
@@ -59,7 +70,7 @@ static inline auto local_player_prediction(Player *local, UserCmd *cmd) {
     //local->tick_base() += 1;
 }
 
-hooks::HookFunction<ClientMode, 0> *create_move_hook = nullptr;
+std::unique_ptr<hooks::HookFunction<ClientMode, 0>> create_move_hook;
 
 #if doghook_platform_windows()
 bool __fastcall hooked_create_move(void *instance, void *edx, float sample_framerate, UserCmd *user_cmd)
@@ -68,6 +79,18 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
 #endif
 {
     profiler_profile_function();
+
+#if doghook_platform_windows()
+    uptr      ebp_address;
+    __asm mov ebp_address, ebp;
+    send_packet_ptr = reinterpret_cast<bool *>(***(uptr ***)ebp_address - 1);
+#else
+    // kotm's method
+    uintptr_t **fp;
+    __asm__("mov %%ebp, %0"
+            : "=r"(fp));
+    send_packet_ptr = reinterpret_cast<bool *>(**fp - 8);
+#endif
 
     auto local_player = Player::local();
     assert(local_player);
@@ -97,12 +120,15 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
 
         aimbot::create_move(user_cmd);
         backtrack::create_move(user_cmd);
-		lagexploit::create_move(user_cmd);
+        lagexploit::create_move(user_cmd);
+        anti_aim::create_move(user_cmd);
+        misc::create_move(user_cmd);
     }
     {
         profiler_profile_scope("finish");
         backtrack::create_move_finish(user_cmd);
     }
+
     return false;
 }
 
@@ -110,13 +136,13 @@ void level_init() {
     logging::msg("=> Hooking up!");
 
     assert(create_move_hook == nullptr);
-    create_move_hook = new hooks::HookFunction<ClientMode, 0>(IFace<ClientMode>().get(), 21, 22, 22, reinterpret_cast<void *>(&hooked_create_move));
+    create_move_hook = std::make_unique<hooks::HookFunction<ClientMode, 0>>(IFace<ClientMode>().get(), 21, 22, 22, reinterpret_cast<void *>(&hooked_create_move));
 }
 
 void level_shutdown() {
     logging::msg("<= Deleting hooks");
 
-    delete create_move_hook;
+    create_move_hook.reset();
     create_move_hook = nullptr;
 }
 

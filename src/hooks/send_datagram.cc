@@ -12,7 +12,7 @@ class bf_write;
 
 namespace send_datagram {
 
-hooks::HookFunction<NetChannel, 0> *send_datagram_hook;
+std::unique_ptr<hooks::HookFunction<NetChannel, 0>> send_datagram_hook;
 
 #if doghook_platform_windows()
 u32 __fastcall hooked_send_datagram(NetChannel *channel, void *, bf_write *datagram)
@@ -36,11 +36,11 @@ u32 hooked_send_datagram(NetChannel *channel, bf_write *datagram)
 
 void level_init() {
     assert(send_datagram_hook == nullptr);
-    send_datagram_hook = new hooks::HookFunction<NetChannel, 0>(IFace<Engine>()->net_channel_info(), 46, 47, 47, reinterpret_cast<void *>(&hooked_send_datagram));
+    send_datagram_hook = std::make_unique<hooks::HookFunction<NetChannel, 0>>(IFace<Engine>()->net_channel_info(), 46, 47, 47, reinterpret_cast<void *>(&hooked_send_datagram));
 }
 
 void level_shutdown() {
-    delete send_datagram_hook;
+    send_datagram_hook.reset();
     send_datagram_hook = nullptr;
 }
 

@@ -4,6 +4,8 @@
 
 #include <sdk/convar.hh>
 #include <sdk/interface.hh>
+#include <sdk/netvar.hh>
+#include <sdk/player.hh>
 #include <sdk/sdk.hh>
 
 using namespace sdk;
@@ -53,6 +55,8 @@ enum cvar_flags {
                                              // Note: IVEngineClient::ClientCmd_Unrestricted can run any client command.
 };
 
+Netvar local_angles{"DT_BasePlayer", "pl", "deadflag"};
+
 void init_all() {
     for (auto c : sdk::ConvarWrapper::get_range()) {
         auto flags = c.flags();
@@ -67,5 +71,20 @@ void init_all() {
 
         c.set_flags(flags);
     }
+
+    local_angles.offset_delta(4);
 }
+
+Convar<bool> doghook_misc_show_aa{"doghook_misc_show_aa", true, nullptr};
+
+math::Vector last_viewangles;
+
+void create_move(sdk::UserCmd *cmd) {
+    last_viewangles = cmd->viewangles;
+}
+
+void update(float frametime) {
+    if (!IFace<Engine>()->in_game()) return;
+}
+
 } // namespace misc

@@ -4,8 +4,6 @@ namespace sdk {
 class UserCmd;
 }
 
-namespace misc {
-void init_all();
+namespace anti_aim {
 void create_move(sdk::UserCmd *cmd);
-void update(float frametime);
-} // namespace misc
+}

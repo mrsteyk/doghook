@@ -329,6 +329,10 @@ ConvarBase::~ConvarBase() {
         auto modifiable = const_cast<ConvarBase *>(c);
         if (c->next == this) modifiable->next = this->next;
     }
+
+    // Cleanup tf_convar
+    // This unregisters itself
+    delete this->tf_convar;
 }
 
 void ConvarBase::init_all() {

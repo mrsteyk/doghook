@@ -11,7 +11,7 @@
 using namespace sdk;
 
 namespace paint_hook {
-hooks::HookFunction<EngineVgui, 0> *engine_vgui_hook;
+std::unique_ptr<hooks::HookFunction<EngineVgui, 0>> engine_vgui_hook;
 
 using StartDrawing  = void(__thiscall *)(void *);
 using FinishDrawing = void(__thiscall *)(void *);
@@ -36,11 +36,11 @@ void hooked_paint(EngineVgui *instance, u32 paint_method)
 
 void init_all() {
     // hook up
-    engine_vgui_hook = new hooks::HookFunction<EngineVgui, 0>(IFace<EngineVgui>().get(), 13, 14, 14, reinterpret_cast<void *>(&hooked_paint));
+    engine_vgui_hook = std::make_unique<hooks::HookFunction<EngineVgui, 0>>(IFace<EngineVgui>().get(), 13, 14, 14, reinterpret_cast<void *>(&hooked_paint));
 }
 
 void shutdown_all() {
-    delete engine_vgui_hook;
+    engine_vgui_hook.reset();
 }
 
 } // namespace paint_hook
