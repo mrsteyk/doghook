@@ -20,6 +20,7 @@
 #include "hooks/send_datagram.hh"
 
 #include "modules/esp.hh"
+#include "modules/menu.hh"
 #include "modules/misc.hh"
 
 #include "utils/profiler.hh"
@@ -158,6 +159,8 @@ public:
         misc::init_all();
 
         logging::msg("DOGHOOK:tm: :joy: :joy: :jo3: :nice:\nBuild: " __DATE__ " " __TIME__);
+
+        menu::init();
 
         // at this point we are now inited and ready to go!
         inited = true;

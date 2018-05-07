@@ -7,6 +7,7 @@
 #include <sdk/sdk.hh>
 
 #include "modules/esp.hh"
+#include "modules/menu.hh"
 
 using namespace sdk;
 
@@ -29,6 +30,7 @@ void hooked_paint(EngineVgui *instance, u32 paint_method)
 
         // Draw here!
         esp::paint();
+		menu::paint();
 
         draw::finish();
     }
