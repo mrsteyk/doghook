@@ -13,13 +13,13 @@
 
 namespace menu {
 
-struct menu_element {
+struct MenuElement {
     bool                cat_init;
     bool                uncat_enabled; // dirty
     std::string         name;
     sdk::ConvarType     type;
     sdk::ConvarWrapper *cvar;
-    menu_element(const char *cname, sdk::ConvarType ctype, bool uncat = false) {
+    MenuElement(const char *cname, sdk::ConvarType ctype, bool uncat = false) {
         cat_init      = uncat;
         uncat_enabled = false;
         name          = cname;
@@ -35,7 +35,7 @@ struct menu_element {
     };
 };
 
-std::vector<std::deque<menu_element>> to_render;
+std::vector<std::deque<MenuElement>> to_render;
 //std::deque<menu_element>              uncat_cvars;
 
 bool can_draw = false;
@@ -45,7 +45,7 @@ void init() {
     std::unordered_set<std::string> cat_names;
     //std::unordered_set<sdk::ConvarWrapper> cvars;
 
-    std::unordered_map<std::string, std::vector<menu_element>> cat_cvars;
+    std::unordered_map<std::string, std::vector<MenuElement>> cat_cvars;
 
     for (auto c : sdk::ConvarBase::Convar_Range()) {
         //cvars.insert(sdk::ConvarWrapper(c->name));
@@ -60,7 +60,7 @@ void init() {
                 cat_names.insert(cat_name);
                 logging::msg("cat_name %s cvar_name %s", cat_name.c_str(), c->name());
                 //cat_cvars[cat_name].push_back(std::make_pair(sdk::ConvarWrapper(c->name), c->name));
-                cat_cvars[cat_name].push_back(menu_element(c->name(), c->type()));
+                cat_cvars[cat_name].push_back(MenuElement(c->name(), c->type()));
             } else {
                 //uncat_cvars.push_back(std::make_pair(sdk::ConvarWrapper(c->name), c->name));
                 //uncat_cvars.push_back(menu_element(c->name(), c->type()));
@@ -76,7 +76,7 @@ void init() {
         strcpy(enabled, cat_name.c_str());
         strcat_s(enabled, "_enabled");
 
-        std::deque<menu_element> tmp;
+        std::deque<MenuElement> tmp;
 
         bool search = true;
 
@@ -93,7 +93,7 @@ void init() {
         }
 
         if (search)
-            tmp.push_front(menu_element(cat_name.c_str(), sdk::ConvarType::Bool, true));
+            tmp.push_front(MenuElement(cat_name.c_str(), sdk::ConvarType::Bool, true));
 
         to_render.push_back(tmp);
     }
@@ -121,7 +121,7 @@ void cursor_input(int &cur_pos) {
     }
 }
 
-void cvar_input(menu_element &elem) {
+void cvar_input(MenuElement &elem) {
     static bool was_left  = false;
     static bool was_right = false;
     if (!was_left && IFace<sdk::InputSystem>()->is_button_down(sdk::ButtonCode::KEY_LEFT)) {
@@ -175,7 +175,7 @@ bool is_visible() {
     return visible;
 }
 
-void draw_elem(const sdk::draw::FontHandle &font, sdk::draw::Color &color, const math::Vector &render, const menu_element &elem) {
+void draw_elem(const sdk::draw::FontHandle &font, sdk::draw::Color &color, const math::Vector &render, const MenuElement &elem) {
     switch (elem.type) {
     case sdk::ConvarType::Bool:
         sdk::draw::text(font, color, render, "    %s: %s", elem.name.c_str(), elem.cvar->get_bool() ? "Enabled" : "Disabled");
