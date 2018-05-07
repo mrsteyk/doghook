@@ -74,7 +74,7 @@ void init() {
         char enabled[256];
         memset(enabled, 0, 256);
         strcpy(enabled, cat_name.c_str());
-        strcat_s(enabled, "_enabled");
+        strcat(enabled, "_enabled");
 
         std::deque<MenuElement> tmp;
 
