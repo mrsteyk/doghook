@@ -26,6 +26,7 @@ struct MenuElement {
         type          = ctype;
         //cat_name = ccat_name;
         if (!uncat) {
+            name = cname + 8;
             sdk::ConvarWrapper tmp(cname);
             cvar = (sdk::ConvarWrapper *)malloc(sizeof(sdk::ConvarWrapper));
             memcpy(cvar, &tmp, sizeof(sdk::ConvarWrapper));
@@ -219,7 +220,7 @@ void paint() {
     if (cur_pos < 0)
         cur_pos = 0;
 
-	sdk::draw::filled_rect({ 0, 0, 0, 255 - 8 }, pos, end);
+    sdk::draw::filled_rect({0, 0, 0, 255 - 8}, pos, end);
 
     for (auto &cat : to_render) {
         bool cat_enabled = false;
@@ -254,9 +255,9 @@ void paint() {
 #undef selected
 
     if (cur_pos >= cursor)
-        cur_pos = cursor-1;
+        cur_pos = cursor - 1;
 
-	end = render;
-	end.x += 200.0f;
+    end = render;
+    end.x += 200.0f;
 }
 } // namespace menu
