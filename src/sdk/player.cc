@@ -12,7 +12,7 @@
 using namespace sdk;
 
 Player *Player::local() {
-    return static_cast<Player *>(IFace<EntList>()->entity(IFace<Engine>()->local_player_index()));
+    return static_cast<Player *>(iface::ent_list->entity(iface::engine->local_player_index()));
 }
 
 static auto health = Netvar("DT_BasePlayer", "m_iHealth");
@@ -119,7 +119,7 @@ int &       Player::tick_base() {
 
 static auto active_weapon_handle = Netvar("DT_BaseCombatCharacter", "m_hActiveWeapon");
 Weapon *    Player::active_weapon() {
-    return static_cast<Weapon *>(IFace<EntList>()->from_handle(::active_weapon_handle.get<EntityHandle>(this)));
+    return static_cast<Weapon *>(iface::ent_list->from_handle(::active_weapon_handle.get<EntityHandle>(this)));
 }
 
 static auto sim_time = Netvar("DT_BaseEntity", "m_flSimulationTime");
@@ -221,7 +221,7 @@ const ModelHandle *Player::model_handle() {
 }
 
 const StudioModel *Player::studio_model() {
-    return IFace<ModelInfo>()->studio_model(this->model_handle());
+    return iface::model_info->studio_model(this->model_handle());
 }
 
 static auto hitboxes_internal(Player *player, const StudioModel *model, PlayerHitboxes *hitboxes, bool create_pose) {
@@ -229,7 +229,7 @@ static auto hitboxes_internal(Player *player, const StudioModel *model, PlayerHi
 
     // #define BONE_USED_BY_ANYTHING        0x0007FF00
     // #define BONE_USED_BY_HITBOX			0x00000100
-    bool success = player->bone_transforms(bone_to_world, 128, 0x00000100, IFace<Globals>()->curtime);
+    bool success = player->bone_transforms(bone_to_world, 128, 0x00000100, iface::globals->curtime);
     assert(success);
 
     std::memcpy(hitboxes->bone_to_world, bone_to_world, 128 * sizeof(math::Matrix3x4));
@@ -283,7 +283,7 @@ u32 Player::hitboxes(PlayerHitboxes *hitboxes_out, bool create_pose) {
 
 PlayerInfo Player::info() {
     PlayerInfo info;
-    auto       found = IFace<Engine>()->player_info(index(), &info);
+    auto       found = iface::engine->player_info(index(), &info);
 
     if (!found) {
         info.user_id = -1;

@@ -54,7 +54,7 @@ void draw_entity_bone_transforms(Player *p, const math::Matrix3x4 *bone_to_world
         auto g = 255;
         auto b = 0;
 
-        IFace<DebugOverlay>()->add_box_overlay(origin, box->min, box->max, angles, r, g, b, 100, 0);
+        iface::overlay->add_box_overlay(origin, box->min, box->max, angles, r, g, b, 100, 0);
     }
 }
 
@@ -63,10 +63,13 @@ enum { backtrack_max_anim_layers = 15 };
 class Record {
 public:
     // animation related
-    std::array<AnimationLayer, backtrack_max_anim_layers> animation_layers;
+#if 0
+	std::array<AnimationLayer, backtrack_max_anim_layers> animation_layers;
     std::array<float, 15>                                 pose_parameters;
-    float                                                 master_cycle;
-    int                                                   master_sequence;
+#endif
+
+    float master_cycle;
+    int   master_sequence;
 
     // state related
     bool alive;
@@ -75,12 +78,14 @@ public:
     bool size_changed;
 
     // absolute related
+#if 0
     math::Vector origin;
     math::Vector render_origin;
     math::Vector angles;
     math::Vector real_angles;
     math::Vector min_prescaled;
     math::Vector max_prescaled;
+#endif
 
     PlayerHitboxes hitboxes;
     u32            max_hitboxes;
@@ -140,7 +145,7 @@ u32                  last_incoming_sequence;
 Convar<float> doghook_backtrack_latency{"doghook_backtrack_latency", 0, 0, 1, nullptr};
 
 void add_latency_to_netchannel(NetChannel *c) {
-    float current_time = IFace<Globals>()->realtime;
+    float current_time = iface::globals->realtime;
     for (auto &s : sequences) {
         if (current_time - s.cur_time > doghook_backtrack_latency) {
             c->in_reliable_state() = s.in_state;
@@ -152,14 +157,14 @@ void add_latency_to_netchannel(NetChannel *c) {
 }
 
 void update_incoming_sequences() {
-    NetChannel *c = IFace<Engine>()->net_channel_info();
+    NetChannel *c = iface::engine->net_channel_info();
 
     auto incoming_sequence = c->in_sequence();
 
     if (incoming_sequence > last_incoming_sequence) {
         last_incoming_sequence = incoming_sequence;
 
-        sequences.push_front({c->in_reliable_state(), c->out_reliable_state(), c->in_sequence(), c->out_sequence(), IFace<Globals>()->realtime});
+        sequences.push_front({c->in_reliable_state(), c->out_reliable_state(), c->in_sequence(), c->out_sequence(), iface::globals->realtime});
     }
 
     if (sequences.size() > 2048)
@@ -194,19 +199,19 @@ float lerp_time() {
 }
 
 bool tick_valid(u32 tick) {
-    auto net_channel = IFace<Engine>()->net_channel_info();
+    auto net_channel = iface::engine->net_channel_info();
 
     auto lerp       = lerp_time();
-    auto lerp_ticks = IFace<Globals>()->time_to_ticks(lerp);
+    auto lerp_ticks = iface::globals->time_to_ticks(lerp);
 
     auto correct = std::clamp(lerp + doghook_backtrack_latency + latency_outgoing, 0.0f, sv_maxunlag.get_float());
 
-    auto delta_time = correct - IFace<Globals>()->ticks_to_time(IFace<Globals>()->tickcount + 1 + lerp_ticks - tick);
+    auto delta_time = correct - iface::globals->ticks_to_time(iface::globals->tickcount + 1 + lerp_ticks - tick);
 
     bool valid = std::abs(delta_time) <= 0.2;
 
     if (!valid) {
-        auto new_tick = IFace<Globals>()->tickcount - IFace<Globals>()->time_to_ticks(correct);
+        auto new_tick = iface::globals->tickcount - iface::globals->time_to_ticks(correct);
         //logging::msg("[Backtracking] !valid (%d -> %d d: %d)", tick, new_tick, new_tick - tick);
     }
 
@@ -217,17 +222,24 @@ bool tick_valid(u32 tick) {
 static bool restore_player_to_record(sdk::Player *p, const Record &r) {
     profiler_profile_function();
 
-    p->set_origin(r.origin);
+    // TODO: now that i have figured out how tracerays work against studiomodels
+    // and baseanimatings... Most of these dont matter
+
+#if 0
+	p->set_origin(r.origin);
     p->render_origin() = r.render_origin;
 
     p->set_angles(r.angles);
     //p->render_angle() = r.angles;
+#endif
 
     p->sim_time()  = r.simulation_time;
     p->anim_time() = r.animation_time;
 
     p->cycle()    = r.master_cycle;
     p->sequence() = r.master_sequence;
+
+#if 0
 
     auto layer_count = p->anim_layer_count();
 
@@ -241,6 +253,7 @@ static bool restore_player_to_record(sdk::Player *p, const Record &r) {
     // Because we changed the animation we need to tell the
     // animation state about it
     p->update_client_side_animation();
+#endif
 
     // Now we need to tell the cache that these bones are different...
 
@@ -264,7 +277,7 @@ static bool restore_player_to_record(sdk::Player *p, const Record &r) {
 
     static auto bone_cache_update_bones = signature::find_pattern<BoneCache_UpdateBonesFn>("client", "55 8B EC 83 EC 08 56 8B F1 33 D2", 0);
 
-    if (bone_cache != nullptr) bone_cache_update_bones(bone_cache, r.hitboxes.bone_to_world, 128, IFace<Globals>()->curtime);
+    if (bone_cache != nullptr) bone_cache_update_bones(bone_cache, r.hitboxes.bone_to_world, 128, iface::globals->curtime);
 
 #else
     // 8B 86 ? ? ? ? 89 04 24 E8 ? ? ? ? 85 C0 89 C3 74 48 -> hitbox_bone_cache_handle_offset
@@ -280,7 +293,7 @@ static bool restore_player_to_record(sdk::Player *p, const Record &r) {
     BoneCache * bone_cache            = studio_get_bone_cache(hitbox_bone_cache_handle);
 
     static auto bone_cache_update_bones = signature::find_pattern<BoneCache_UpdateBonesFn>("client", "55 89 E5 57 31 FF 56 53 83 EC 1C 8B 5D 08 0F B7 53 10", 0);
-    if (bone_cache != nullptr) bone_cache_update_bones(bone_cache, r.hitboxes.bone_to_world, 128, IFace<Globals>()->curtime);
+    if (bone_cache != nullptr) bone_cache_update_bones(bone_cache, r.hitboxes.bone_to_world, 128, iface::globals->curtime);
 
 #endif
 
@@ -336,18 +349,18 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
 
     update_incoming_sequences();
 
-    current_tick = IFace<Globals>()->tickcount;
+    current_tick = iface::globals->tickcount;
 
     auto local_player = Player::local();
 
     // Get the current latency (not useful here but will be later on in the tick)
-    latency_incoming    = IFace<Engine>()->net_channel_info()->latency(NetChannel::Flow::incoming);
-    latency_outgoing    = IFace<Engine>()->net_channel_info()->latency(NetChannel::Flow::outgoing);
+    latency_incoming    = iface::engine->net_channel_info()->latency(NetChannel::Flow::incoming);
+    latency_outgoing    = iface::engine->net_channel_info()->latency(NetChannel::Flow::outgoing);
     total_latency_time  = latency_incoming + latency_outgoing;
-    total_latency_ticks = IFace<Globals>()->time_to_ticks(total_latency_time);
+    total_latency_ticks = iface::globals->time_to_ticks(total_latency_time);
 
     // We want to get from entity 1 to entity 32
-    for (auto entity : IFace<EntList>()->get_range(IFace<Engine>()->max_clients() + 1)) {
+    for (auto entity : iface::ent_list->get_range(iface::engine->max_clients() + 1)) {
         if (entity == nullptr) continue;
 
         auto player = entity->to_player();
@@ -372,10 +385,15 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
 
         profiler_profile_scope("update_record");
 
+        // TODO: look above at restore_player_to_tick for information about why this
+        // is commented out.
+
         // Set absolute origin and angles
-        new_record.origin        = player->origin();
+#if 0
+		new_record.origin        = player->origin();
         new_record.render_origin = player->render_origin();
-        new_record.angles        = player->angles();
+
+		new_record.angles        = player->angles();
 
         // TODO: when real angles and corrected angles differ we need to change this
         new_record.real_angles = player->angles();
@@ -387,6 +405,8 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
         new_record.size_changed   = previous_record.min_prescaled != new_record.min_prescaled ||
                                   previous_record.max_prescaled != new_record.max_prescaled;
 
+#endif
+
         new_record.simulation_time = player->sim_time();
         new_record.animation_time  = player->anim_time();
 
@@ -395,6 +415,8 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
         new_record.master_cycle    = player->cycle();
         new_record.master_sequence = player->sequence();
         new_record.this_tick       = current_tick;
+
+#if 0
 
         auto layer_count = player->anim_layer_count();
 #ifdef _DEBUG
@@ -407,6 +429,7 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
         for (u32 i = 0; i < layer_max; ++i) {
             new_record.animation_layers[i] = player->anim_layer(i);
         }
+#endif
 
         new_record.max_hitboxes = player->hitboxes(&new_record.hitboxes, false);
     }
@@ -416,19 +439,19 @@ void create_move(sdk::UserCmd *cmd) {
 #if doghook_platform_debug()
     profiler_profile_function();
 
-    for (auto entity : IFace<EntList>()->get_range()) {
+    for (auto entity : iface::ent_list->get_range()) {
         if (!entity->is_valid()) continue;
 
         auto player = entity->to_player();
         if (auto player = entity->to_player()) {
             for (auto &r : record_track(player->index())) {
-                //auto &r = record(player->index(), IFace<Globals>()->tickcount + 1);
+                //auto &r = record(player->index(), iface::Globals->tickcount + 1);
 
                 if (!r.alive) continue;
 
                 if (!tick_valid(r.this_tick)) continue;
 
-                IFace<DebugOverlay>()->add_box_overlay(r.origin, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 0, 255, 0, 100, 0);
+                iface::overlay->add_box_overlay(r.hitboxes.origin[0], {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 0, 255, 0, 100, 0);
 
 #if 0
                 auto &hitboxes = r.hitboxes;
@@ -439,7 +462,7 @@ void create_move(sdk::UserCmd *cmd) {
                     auto g = (int)(255.0f * hullcolor[j].y);
                     auto b = (int)(255.0f * hullcolor[j].z);
 
-                    IFace<DebugOverlay>()->add_box_overlay(hitboxes.origin[i], hitboxes.raw_min[i], hitboxes.raw_max[i], hitboxes.rotation[i], r, g, b, 100, 0);
+                    iface::DebugOverlay->add_box_overlay(hitboxes.origin[i], hitboxes.raw_min[i], hitboxes.raw_max[i], hitboxes.rotation[i], r, g, b, 100, 0);
 
                     //math::Vector origin;
                     //math::Vector angles;
@@ -449,7 +472,7 @@ void create_move(sdk::UserCmd *cmd) {
                     //g = 255;
                     //b = 0;
 
-                    //IFace<DebugOverlay>()->add_box_overlay(origin, hitboxes.raw_min[i], hitboxes.raw_max[i], angles, r, g, b, 100, 0);
+                    //iface::DebugOverlay->add_box_overlay(origin, hitboxes.raw_min[i], hitboxes.raw_max[i], angles, r, g, b, 100, 0);
                 }
 #endif
             }
@@ -492,7 +515,7 @@ void RewindState::to_tick(u32 t) {
 
     auto local_player = Player::local();
 
-    for (auto entity : IFace<EntList>()->get_range(IFace<Engine>()->max_clients() + 1)) {
+    for (auto entity : iface::ent_list->get_range(iface::engine->max_clients() + 1)) {
         if (!entity->is_valid()) continue;
 
         if (auto p = entity->to_player()) {

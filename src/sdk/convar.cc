@@ -27,7 +27,7 @@ public:
         create_base(name, help_string, flags);
     }
     virtual ~ConCommandBase() {
-        IFace<Cvar>()->unregister_command(this);
+        iface::cvar->unregister_command(this);
     }
 
     virtual bool is_command() const { return false; }
@@ -43,7 +43,7 @@ public:
     }
 
     virtual int get_dll_identifier() const {
-        if (dll_identifier == -1) dll_identifier = IFace<Cvar>()->allocate_dll_identifier();
+        if (dll_identifier == -1) dll_identifier = iface::cvar->allocate_dll_identifier();
         return dll_identifier;
     }
 
@@ -62,13 +62,13 @@ public:
 
         // We might not have Cvar here (global variables)
 
-        if (auto cvar = IFace<Cvar>() && can_init_convars_at_construction_time) {
-            IFace<Cvar>()->register_command(this);
+        if (auto cvar = iface::cvar && can_init_convars_at_construction_time) {
+            iface::cvar->register_command(this);
         }
     }
 
     virtual bool init() {
-        IFace<Cvar>()->register_command(this);
+        iface::cvar->register_command(this);
         return true;
     }
 
@@ -336,7 +336,7 @@ ConvarBase::~ConvarBase() {
 }
 
 void ConvarBase::init_all() {
-    assert(IFace<sdk::Cvar>());
+    assert(iface::cvar);
 
     sdk::can_init_convars_at_construction_time = true;
 
@@ -350,7 +350,7 @@ void ConvarBase::init_all() {
     while (c != nullptr) {
         auto next = c->next;
 
-        IFace<sdk::Cvar>()->register_command(c);
+        iface::cvar->register_command(c);
 
         c = next;
     }
@@ -363,11 +363,11 @@ void ConvarBase::init_all() {
 // TODO: this needs a better method of keeping in sync with the
 // Interface declaration in doghook.cc
 Cvar *get_or_init_cvar() {
-    if (IFace<Cvar>().get() == nullptr) {
-        IFace<Cvar>().set_from_interface("vstdlib", "VEngineCvar");
+    if (iface::cvar.get() == nullptr) {
+        iface::cvar.set_from_interface("vstdlib", "VEngineCvar");
     }
 
-    return IFace<Cvar>().get();
+    return iface::cvar.get();
 }
 
 ConvarWrapper::ConvarWrapper(const char *name) {
@@ -421,6 +421,6 @@ ConvarWrapper ConvarWrapper::Range::Iterator::operator++() {
     return ConvarWrapper(const_cast<ConCommandBase *>(current));
 }
 
-ConvarWrapper::Range::Iterator ConvarWrapper::Range::begin() const { return Iterator(IFace<Cvar>()->root_node()); }
+ConvarWrapper::Range::Iterator ConvarWrapper::Range::begin() const { return Iterator(iface::cvar->root_node()); }
 
 } // namespace sdk

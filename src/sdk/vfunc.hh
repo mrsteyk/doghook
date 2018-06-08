@@ -8,11 +8,11 @@
 
 // helpers for calling virtual functions
 namespace vfunc {
-inline void ** get_table(void *inst, u32 offset) {
+inline void **get_table(void *inst, u32 offset) {
     return *reinterpret_cast<void ***>(reinterpret_cast<u8 *>(inst) + offset);
 }
 
-inline const void ** get_table(const void *inst, u32 offset) {
+inline const void **get_table(const void *inst, u32 offset) {
     return *reinterpret_cast<const void ***>(
         reinterpret_cast<u8 *>(
             const_cast<void *>(inst)) +

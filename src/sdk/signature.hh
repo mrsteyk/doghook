@@ -6,6 +6,7 @@
 
 namespace signature {
 void *resolve_library(const char *name);
+void *resolve_library(u32 address);
 void *resolve_import(void *handle, const char *name);
 
 u8 *find_pattern(const char *module, const char *pattern);

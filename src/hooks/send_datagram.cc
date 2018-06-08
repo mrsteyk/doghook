@@ -23,7 +23,6 @@ u32 hooked_send_datagram(NetChannel *channel, bf_write *datagram)
     auto in_state    = channel->in_reliable_state();
     auto in_sequence = channel->in_sequence();
 
-    // TODO: Call out to backtrack
     backtrack::add_latency_to_netchannel(channel);
 
     auto ret = send_datagram_hook->call_original<u32>(datagram);
@@ -36,7 +35,7 @@ u32 hooked_send_datagram(NetChannel *channel, bf_write *datagram)
 
 void level_init() {
     assert(send_datagram_hook == nullptr);
-    send_datagram_hook = std::make_unique<hooks::HookFunction<NetChannel, 0>>(IFace<Engine>()->net_channel_info(), 46, 47, 47, reinterpret_cast<void *>(&hooked_send_datagram));
+    send_datagram_hook = std::make_unique<hooks::HookFunction<NetChannel, 0>>(iface::engine->net_channel_info(), 46, 47, 47, reinterpret_cast<void *>(&hooked_send_datagram));
 }
 
 void level_shutdown() {

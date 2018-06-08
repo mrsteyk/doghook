@@ -21,7 +21,7 @@ internal_checker::ClassIDChecker::ClassIDChecker(const char *name, const u32 val
 }
 
 static auto find_class_id(const char *name) {
-    for (auto client_class = IFace<Client>()->get_all_classes();
+    for (auto client_class = iface::client->get_all_classes();
          client_class != nullptr;
          client_class = client_class->next)
         if (strcmp(client_class->network_name, name) == 0) return client_class->class_id;

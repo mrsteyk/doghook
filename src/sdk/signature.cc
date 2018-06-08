@@ -151,6 +151,18 @@ void *signature::resolve_library(const char *name) {
 
     return nullptr;
 }
+void *signature::resolve_library(u32 address) {
+#if doghook_platform_windows()
+    HMODULE h;
+    if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                          (LPCTSTR)address, &h)) {
+        return h;
+    }
+#else
+
+#endif
+    return nullptr;
+}
 void *signature::resolve_import(void *handle, const char *name) {
 #if doghook_platform_windows()
     return reinterpret_cast<void *>(GetProcAddress(static_cast<HMODULE>(handle), name));

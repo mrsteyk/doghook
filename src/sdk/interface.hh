@@ -11,6 +11,8 @@ class Interface {
     static T *value;
 
 public:
+    Interface() = default;
+
     // interface name should be the name of the interface
     // without the version number
     // e.g. "VClient017" -> "VClient"
@@ -25,11 +27,15 @@ public:
         value = new_value;
     }
 
-    T *& operator-> () {
+    T *operator->() {
+        return get();
+    }
+
+    static T *&get() {
         return value;
     }
 
-    T *& get() {
+    operator T *() {
         return value;
     }
 

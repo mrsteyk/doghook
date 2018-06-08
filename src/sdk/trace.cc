@@ -6,7 +6,7 @@
 
 bool trace::Filter::should_hit_entity(sdk::Entity *handle_entity, int contents_mask) {
     auto handle      = handle_entity->to_handle();
-    auto real_entity = IFace<sdk::EntList>()->from_handle(handle);
+    auto real_entity = sdk::iface::ent_list->from_handle(handle);
 
     if (real_entity == nullptr) return false;
 

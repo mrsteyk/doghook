@@ -121,6 +121,8 @@ public:
     virtual void post_render() override {}
 };
 
+// TODO: GameSystem could be in a namespace...
+
 class GameSystem : public CBaseGameSystemPerFrame {
     GameSystem *next;
 

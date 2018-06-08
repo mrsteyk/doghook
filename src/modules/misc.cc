@@ -84,7 +84,7 @@ void create_move(sdk::UserCmd *cmd) {
 }
 
 void update(float frametime) {
-    if (!IFace<Engine>()->in_game()) return;
+    if (!iface::engine->in_game()) return;
 }
 
 } // namespace misc

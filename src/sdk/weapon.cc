@@ -18,7 +18,7 @@ float Weapon::next_secondary_attack() {
 }
 
 bool Weapon::can_shoot(u32 tickbase) {
-    return tickbase * IFace<Globals>()->interval_per_tick > next_primary_attack();
+    return tickbase * iface::globals->interval_per_tick > next_primary_attack();
 }
 
 auto clip1 = Netvar("DT_BaseCombatWeapon", "LocalWeaponData", "m_iClip1");

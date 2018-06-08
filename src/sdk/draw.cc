@@ -73,7 +73,7 @@ void init(RenderTarget t) {
 #endif
 
         // set up surface interfaces
-        IFace<EngineVgui>().set_from_interface("engine", "VEngineVGui");
+        iface::engine_vgui.set_from_interface("engine", "VEngineVGui");
         IFace<Surface>().set_from_interface("vguimatsurface", "VGUI_Surface030");
 
         current_render_target = RenderTarget::surface;
@@ -117,7 +117,7 @@ void finish() {
 
 bool world_to_screen(const math::Vector &world, math::Vector &screen) {
     if (is_surface()) {
-        return !IFace<DebugOverlay>()->screen_position(world, screen);
+        return !iface::overlay->screen_position(world, screen);
     }
 
     return false;

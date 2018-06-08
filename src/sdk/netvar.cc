@@ -26,7 +26,7 @@ Netvar::Tree::Tree() {
 void Netvar::Tree::init() {
     if (prop_tree.size() > 0) return;
 
-    auto cc = IFace<Client>()->get_all_classes();
+    auto cc = iface::client->get_all_classes();
     while (cc != nullptr) {
         const auto new_node = std::make_shared<Node>();
         new_node->p         = nullptr;

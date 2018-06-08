@@ -46,7 +46,7 @@ inline static auto fix_movement_for_new_angles(const math::Vector &movement, con
     math::Matrix3x4 rotate_matrix;
 
     auto delta_angles = new_angles - old_angles;
-    delta_angles      = clamp_angle(delta_angles);
+    delta_angles.x    = 0; // We dont care about pitch for this
 
     rotate_matrix.from_angle(delta_angles);
     return rotate_matrix.rotate_vector(movement);

@@ -46,7 +46,7 @@ static auto visible_no_entity(const math::Vector &position) {
 
     ray.init(local_view, position);
 
-    IFace<Trace>()->trace_ray(ray, 0x46004003, &f, &result);
+    iface::trace->trace_ray(ray, 0x46004003, &f, &result);
 
     return result.fraction == 1.0f;
 }
@@ -61,7 +61,7 @@ static auto         visible(Entity *e, const math::Vector &position, const int h
 
     ray.init(local_view, position);
 
-    IFace<Trace>()->trace_ray(ray, 0x46004003, &f, &result);
+    iface::trace->trace_ray(ray, 0x46004003, &f, &result);
 
     if (doghook_aimbot_pedantic_mode == true) {
         if (result.entity == e && result.hitbox == hitbox) return true;
@@ -211,8 +211,8 @@ auto valid_target(Entity *e) {
 }
 
 void finished_target(Target t) {
-    IFace<DebugOverlay>()->add_entity_text_overlay(t.e->index(), 1, 0, 255, 255, 255, 255, "finished");
-    IFace<DebugOverlay>()->add_entity_text_overlay(t.e->index(), 2, 0, 255, 255, 255, 255, "%d", t.cmd_delta);
+    iface::overlay->add_entity_text_overlay(t.e->index(), 1, 0, 255, 255, 255, 255, "finished");
+    iface::overlay->add_entity_text_overlay(t.e->index(), 2, 0, 255, 255, 255, 255, "%d", t.cmd_delta);
 
     targets.push_back(t);
 }
@@ -232,7 +232,7 @@ auto find_targets() {
     auto best_box = find_best_box();
 
     auto find_target_inner = [&best_box](u32 tick, u32 delta) {
-        for (auto e : IFace<EntList>()->get_range()) {
+        for (auto e : iface::ent_list->get_range()) {
             if (!e->is_valid()) continue;
 
             if (valid_target(e)) {
@@ -251,7 +251,7 @@ auto find_targets() {
         }
     };
 
-    auto current_tick = IFace<Globals>()->tickcount;
+    auto current_tick = iface::globals->tickcount;
 
     bool reverse_order = doghook_aimbot_reverse_backtrack_order;
 
@@ -334,7 +334,7 @@ static auto try_autoshoot(sdk::UserCmd *cmd) {
     // Only allow autoshoot when we are zoomed and can get headshots
     if (local_weapon->client_class()->class_id == class_id::CTFSniperRifle) {
         if ((local_player->cond() & 2)) {
-            auto player_time = local_player->tick_base() * IFace<Globals>()->interval_per_tick;
+            auto player_time = local_player->tick_base() * iface::globals->interval_per_tick;
             auto time_delta  = player_time - local_player->fov_time();
 
             if (time_delta >= 0.2) autoshoot_allowed = true;
@@ -369,7 +369,7 @@ void create_move(sdk::UserCmd *cmd) {
     if (targets.size() > 0 && targets[0].e != nullptr) {
         auto &target = targets[0];
 
-        IFace<DebugOverlay>()->add_box_overlay(target.v, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 255, 255, 0, 100, 0);
+        iface::overlay->add_box_overlay(target.v, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 255, 255, 0, 100, 0);
 
         auto delta      = target.v - local_view;
         auto new_angles = delta.to_angle();
@@ -390,7 +390,7 @@ void create_move(sdk::UserCmd *cmd) {
             }
         }
 
-        if (doghook_aimbot_silent == false) IFace<Engine>()->set_view_angles(new_angles);
+        if (doghook_aimbot_silent == false) iface::engine->set_view_angles(new_angles);
     } else {
         if (doghook_aimbot_disallow_attack_if_no_target == true) cmd->buttons &= ~1;
     }

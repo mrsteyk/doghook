@@ -12,6 +12,8 @@
 #include "trace.hh"
 
 namespace sdk {
+class Player;
+
 class UserCmd {
 public:
     virtual ~UserCmd(){};
@@ -514,5 +516,24 @@ public:
         return_virtual_func(string_to_button_code, 29, 29, 29, 0, string);
     }
 };
+
+namespace iface {
+extern IFace<Client>            client;
+extern IFace<ClientMode>        client_mode;
+extern IFace<Globals>           globals;
+extern IFace<Engine>            engine;
+extern IFace<EntList>           ent_list;
+extern IFace<Input>             input;
+extern IFace<Cvar>              cvar;
+extern IFace<Trace>             trace;
+extern IFace<ModelInfo>         model_info;
+extern IFace<DebugOverlay>      overlay;
+extern IFace<PlayerInfoManager> info_manager;
+extern IFace<Prediction>        prediction;
+extern IFace<MoveHelper>        move_helper;
+extern IFace<GameMovement>      game_movement;
+extern IFace<EngineVgui>        engine_vgui;
+extern IFace<InputSystem>       input_system;
+} // namespace iface
 
 } // namespace sdk

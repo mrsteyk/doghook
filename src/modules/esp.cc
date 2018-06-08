@@ -61,7 +61,7 @@ void paint() {
 
     show_nodes(profiler::find_root_node(), {0, 100, 0});
 
-    if (!IFace<Engine>()->in_game()) return;
+    if (!iface::engine->in_game()) return;
 
     auto local_player = Player::local();
 
@@ -70,7 +70,7 @@ void paint() {
     auto friendly_color = draw::Color(hex::dword(doghook_esp_friendly.to_string()));
     auto enemy_color    = draw::Color(hex::dword(doghook_esp_enemy.to_string()));
 
-    for (auto e : IFace<EntList>()->get_range()) {
+    for (auto e : iface::ent_list->get_range()) {
         if (!e->is_valid()) continue;
 
         if (e->dormant()) continue;

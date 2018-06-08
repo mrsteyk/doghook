@@ -36,7 +36,7 @@ void hooked_paint(EngineVgui *instance, u32 paint_method)
 
 void init_all() {
     // hook up
-    engine_vgui_hook = std::make_unique<hooks::HookFunction<EngineVgui, 0>>(IFace<EngineVgui>().get(), 13, 14, 14, reinterpret_cast<void *>(&hooked_paint));
+    engine_vgui_hook = std::make_unique<hooks::HookFunction<EngineVgui, 0>>(iface::engine_vgui, 13, 14, 14, reinterpret_cast<void *>(&hooked_paint));
 }
 
 void shutdown_all() {

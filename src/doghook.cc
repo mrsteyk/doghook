@@ -41,7 +41,11 @@ public:
 #endif
 
     static void await_shutdown() {
-        while (!doghook_unload_now) std::this_thread::yield();
+        while (!doghook_unload_now) {
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(1000ms);
+            std::this_thread::yield();
+        }
 
 #if doghook_platform_windows()
         // TODO: the CRT should be able to take care of all our hooks as they are all declared
@@ -68,21 +72,21 @@ public:
 
         // Get interfaces here before init_all has a chance to do anything
 
-        IFace<sdk::Client>().set_from_interface("client", "VClient");
-        IFace<sdk::Engine>().set_from_interface("engine", "VEngineClient");
-        IFace<sdk::EntList>().set_from_interface("client", "VClientEntityList");
+        IFace<sdk::Client>::set_from_interface("client", "VClient");
+        IFace<sdk::Engine>::set_from_interface("engine", "VEngineClient");
+        IFace<sdk::EntList>::set_from_interface("client", "VClientEntityList");
 
         if constexpr (doghook_platform::windows())
-            IFace<sdk::Input>().set_from_pointer(**reinterpret_cast<sdk::Input ***>(
-                vfunc::get_func<u8 *>(IFace<sdk::Client>().get(), 15, 0) + 0x2));
+            IFace<sdk::Input>::set_from_pointer(**reinterpret_cast<sdk::Input ***>(
+                vfunc::get_func<u8 *>(sdk::iface::client, 15, 0) + 0x2));
         else if constexpr (doghook_platform::linux())
-            IFace<sdk::Input>().set_from_pointer(**reinterpret_cast<sdk::Input ***>(
-                vfunc::get_func<u8 *>(IFace<sdk::Client>().get(), 15, 0) + 0x1));
+            IFace<sdk::Input>::set_from_pointer(**reinterpret_cast<sdk::Input ***>(
+                vfunc::get_func<u8 *>(sdk::iface::client, 15, 0) + 0x1));
 
-        IFace<sdk::Cvar>().set_from_interface("vstdlib", "VEngineCvar");
+        IFace<sdk::Cvar>::set_from_interface("vstdlib", "VEngineCvar");
 
         if constexpr (doghook_platform::windows())
-            IFace<sdk::ClientMode>().set_from_pointer(
+            IFace<sdk::ClientMode>::set_from_pointer(
                 *signature::find_pattern<sdk::ClientMode **>(
                     "client", "B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 83 C4 04 C7 05", 1));
         else if constexpr (doghook_platform::linux()) {
@@ -94,40 +98,40 @@ public:
             auto inner_function = static_cast<u8 *>(signature::resolve_callgate(outer_function));
             assert(outer_function);
 
-            IFace<sdk::ClientMode>().set_from_pointer(*reinterpret_cast<sdk::ClientMode **>(inner_function + 10));
-            assert(IFace<sdk::ClientMode>().get());
+            IFace<sdk::ClientMode>::set_from_pointer(*reinterpret_cast<sdk::ClientMode **>(inner_function + 10));
+            assert(sdk::iface::client_mode);
         }
 
-        IFace<sdk::ModelInfo>().set_from_interface("engine", "VModelInfoClient");
-        IFace<sdk::Trace>().set_from_interface("engine", "EngineTraceClient");
-        IFace<sdk::DebugOverlay>().set_from_interface("engine", "VDebugOverlay");
-        IFace<sdk::PlayerInfoManager>().set_from_interface("server", "PlayerInfoManager");
+        IFace<sdk::ModelInfo>::set_from_interface("engine", "VModelInfoClient");
+        IFace<sdk::Trace>::set_from_interface("engine", "EngineTraceClient");
+        IFace<sdk::DebugOverlay>::set_from_interface("engine", "VDebugOverlay");
 
-        IFace<sdk::Globals>().set_from_pointer(IFace<sdk::PlayerInfoManager>()->globals());
+#if 0
+        IFace<sdk::PlayerInfoManager>::set_from_interface("server", "PlayerInfoManager");
+        iface::sdk::Globals>::set_from_pointer(IFace<sdk::PlayerInfoManager->globals());
+        auto globals_server_address = (u32)iface::sdk::Globals.get();
+#endif
 
-        auto globals_server_address = (u32)IFace<sdk::Globals>().get();
-
-        // TODO: this globals_real_address is windows only!
         if constexpr (doghook_platform::windows()) {
             auto globals_real_address = (u32)*signature::find_pattern<sdk::Globals **>("engine", "A1 ? ? ? ? 8B 11 68", 8);
-            IFace<sdk::Globals>().set_from_pointer((sdk::Globals *)globals_real_address);
+            IFace<sdk::Globals>::set_from_pointer((sdk::Globals *)globals_real_address);
         } else if constexpr (doghook_platform::linux()) {
             auto globals_real_address = (u32) * *signature::find_pattern<sdk::Globals ***>("client", "8B 15 ? ? ? ? F3 0F 10 88 D0 08 00 00", 2);
 
-            IFace<sdk::Globals>().set_from_pointer((sdk::Globals *)globals_real_address);
+            IFace<sdk::Globals>::set_from_pointer((sdk::Globals *)globals_real_address);
         }
 
-        IFace<sdk::GameMovement>().set_from_interface("client", "GameMovement");
-        IFace<sdk::Prediction>().set_from_interface("client", "VClientPrediction");
+        IFace<sdk::GameMovement>::set_from_interface("client", "GameMovement");
+        IFace<sdk::Prediction>::set_from_interface("client", "VClientPrediction");
 
         if constexpr (doghook_platform::windows())
-            IFace<sdk::MoveHelper>().set_from_pointer(
+            IFace<sdk::MoveHelper>::set_from_pointer(
                 *signature::find_pattern<sdk::MoveHelper **>(
                     "client", "8B 0D ? ? ? ? 8B 01 FF 50 28 56", 2));
         else if constexpr (doghook_platform::linux())
-            IFace<sdk::MoveHelper>().set_from_pointer(nullptr);
+            IFace<sdk::MoveHelper>::set_from_pointer(nullptr);
 
-        IFace<sdk::InputSystem>().set_from_interface("inputsystem", "InputSystemVersion");
+        IFace<sdk::InputSystem>::set_from_interface("inputsystem", "InputSystemVersion");
 
         inited = true;
     }
@@ -165,7 +169,7 @@ public:
         std::thread{&await_shutdown}.detach();
 
         // If we are already in game then do the level inits
-        if (IFace<sdk::Engine>()->in_game()) {
+        if (sdk::iface::engine->in_game()) {
             level_init_pre_entity();
             level_init_post_entity();
         }
