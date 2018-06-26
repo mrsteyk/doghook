@@ -160,13 +160,13 @@ public:
 
         if (min_value != no_value) {
             if (new_value < min_value) {
-                value = min_value;
+                new_value = min_value;
                 return true;
             }
         }
         if (max_value != no_value) {
             if (new_value > max_value) {
-                value = max_value;
+                new_value = max_value;
                 return true;
             }
         }
@@ -223,14 +223,14 @@ public:
         auto new_value = static_cast<float>(atof(str));
 
         if (min_value != no_value) {
-            if (value < min_value) {
-                value = min_value;
+            if (new_value < min_value) {
+                new_value = min_value;
                 return true;
             }
         }
         if (max_value != no_value) {
-            if (value > max_value) {
-                value = min_value;
+            if (new_value > max_value) {
+                new_value = max_value;
                 return true;
             }
         }

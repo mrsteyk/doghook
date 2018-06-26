@@ -64,7 +64,8 @@ public:
     ~HookInstance() {
 #if doghook_platform_windows()
         // Check that instance is still alive
-        if (!signature::resolve_library((u32)instance) || !signature::resolve_library(*(u32 *)instance)) {
+
+        if (!signature::resolve_library((u32)instance) && !signature::resolve_library(*(u32 *)instance)) {
             return;
         }
 #endif

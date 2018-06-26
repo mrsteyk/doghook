@@ -78,9 +78,10 @@ public:
     bool size_changed;
 
     // absolute related
-#if 0
     math::Vector origin;
     math::Vector render_origin;
+
+#if 0
     math::Vector angles;
     math::Vector real_angles;
     math::Vector min_prescaled;
@@ -225,10 +226,9 @@ static bool restore_player_to_record(sdk::Player *p, const Record &r) {
     // TODO: now that i have figured out how tracerays work against studiomodels
     // and baseanimatings... Most of these dont matter
 
-#if 0
-	p->set_origin(r.origin);
+    p->set_origin(r.origin);
     p->render_origin() = r.render_origin;
-
+#if 0
     p->set_angles(r.angles);
     //p->render_angle() = r.angles;
 #endif
@@ -389,11 +389,10 @@ void create_move_pre_predict(sdk::UserCmd *cmd) {
         // is commented out.
 
         // Set absolute origin and angles
-#if 0
-		new_record.origin        = player->origin();
+        new_record.origin        = player->origin();
         new_record.render_origin = player->render_origin();
-
-		new_record.angles        = player->angles();
+#if 0
+        new_record.angles = player->angles();
 
         // TODO: when real angles and corrected angles differ we need to change this
         new_record.real_angles = player->angles();

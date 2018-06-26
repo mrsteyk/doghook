@@ -616,3 +616,7 @@ core
 compile_commands.json
 .cquery_cached_index
 
+
+make\.bat
+
+make_release\.bat

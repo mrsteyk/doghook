@@ -183,13 +183,6 @@ auto visible_target_inner(Player *player, std::pair<int, bool> best_box, u32 tic
     return false;
 }
 
-// TODO: we need to change the process here...
-// Backtracking affects all players not just the player we are doing visibility checking on
-// therefore backtrack needs a method for reverting all players to a specific state
-
-// To compliment this we can check whether any player is visible first, then check all players in tickcount -1
-// and then -2, so on so forth.
-
 auto visible_player(Player *p, std::pair<int, bool> &best_box, u32 tick, math::Vector &pos) {
     profiler_profile_function();
 
@@ -242,7 +235,6 @@ auto find_targets() {
                     if (visible_player(p, best_box, tick, pos)) {
                         finished_target(Target{e, pos, delta});
 
-                        // Now that we have a target break!
                         // TODO: only do this when we want to do speedy targets!
                         //break;
                     }

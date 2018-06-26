@@ -175,7 +175,9 @@ public:
         }
     }
 
-    void shutdown() override {}
+    void shutdown() override {
+        paint_hook::shutdown_all();
+    }
 
     void level_init_pre_entity() override { logging::msg("init_pre_entity()"); }
     void level_init_post_entity() override {
