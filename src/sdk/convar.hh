@@ -3,6 +3,7 @@
 #include <cfloat>
 #include <climits>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
 // Using a tagged class system allows us to avoid the overhead
@@ -125,7 +126,7 @@ public:
 
     operator bool() const { return value; }
 
-    auto operator=(bool v) {
+    auto &operator=(bool v) {
         value = v;
         return *this;
     }
@@ -189,7 +190,7 @@ public:
 
     operator int() const { return value; }
 
-    auto operator=(int v) {
+    auto &operator=(int v) {
         value = v;
         return *this;
     }
@@ -254,7 +255,7 @@ public:
 
     operator float() const { return value; }
 
-    auto operator=(float v) {
+    auto &operator=(float v) {
         value = v;
         return *this;
     }
@@ -281,7 +282,7 @@ public:
     ~Convar() {
         if (value != nullptr) {
             delete[] value;
-            value = nullptr;
+            //value = nullptr;
         }
     }
 

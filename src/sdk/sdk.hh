@@ -507,8 +507,6 @@ public:
     bool is_button_down(ButtonCode code) {
         return_virtual_func(is_button_down, 11, 11, 11, 0, code);
     }
-
-    //just to be sure, but above is all we really need since i have all keys enumerated
     const char *button_code_to_string(ButtonCode code) {
         return_virtual_func(button_code_to_string, 27, 27, 27, 0, code);
     }

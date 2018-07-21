@@ -118,7 +118,7 @@ static auto multipoint(Player *player, const int hitbox, const math::Vector &cen
     math::Vector centre_min_x = math::Vector(new_x, min.y, centre.z);
     math::Vector centre_max_x = math::Vector(new_x, max.y, centre.z);
 
-    if (multipoint_internal(player, granularity, hitbox, divisor, centre, centre_min_x, centre_max_x, position_out))
+    if (multipoint_internal(player, divisor, granularity, hitbox, centre, centre_min_x, centre_max_x, position_out))
         return true;
 
     auto new_y = math::lerp(0.5, min.x, max.x);
@@ -126,7 +126,7 @@ static auto multipoint(Player *player, const int hitbox, const math::Vector &cen
     math::Vector centre_min_y = math::Vector(min.x, new_y, centre.z);
     math::Vector centre_max_y = math::Vector(max.x, new_y, centre.z);
 
-    if (multipoint_internal(player, granularity, hitbox, divisor, centre, centre_min_y, centre_max_y, position_out))
+    if (multipoint_internal(player, divisor, granularity, hitbox, centre, centre_min_y, centre_max_y, position_out))
         return true;
 
     return false;
@@ -204,8 +204,8 @@ auto valid_target(Entity *e) {
 }
 
 void finished_target(Target t) {
-    iface::overlay->add_entity_text_overlay(t.e->index(), 1, 0, 255, 255, 255, 255, "finished");
-    iface::overlay->add_entity_text_overlay(t.e->index(), 2, 0, 255, 255, 255, 255, "%d", t.cmd_delta);
+    // iface::overlay->add_entity_text_overlay(t.e->index(), 1, 0, 255, 255, 255, 255, "finished");
+    // iface::overlay->add_entity_text_overlay(t.e->index(), 2, 0, 255, 255, 255, 255, "%d", t.cmd_delta);
 
     targets.push_back(t);
 }
@@ -361,7 +361,7 @@ void create_move(sdk::UserCmd *cmd) {
     if (targets.size() > 0 && targets[0].e != nullptr) {
         auto &target = targets[0];
 
-        iface::overlay->add_box_overlay(target.v, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 255, 255, 0, 100, 0);
+        //iface::overlay->add_box_overlay(target.v, {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 255, 255, 0, 100, 0);
 
         auto delta      = target.v - local_view;
         auto new_angles = delta.to_angle();

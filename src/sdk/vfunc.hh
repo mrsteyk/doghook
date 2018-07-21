@@ -75,7 +75,7 @@ public:
     }
 
     Ret invoke(Args... args) {
-        return f(instance, args...);
+        return f(instance, std::forward<Args>(args)...);
     }
 };
 

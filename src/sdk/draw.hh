@@ -32,6 +32,14 @@ enum class RenderTarget {
 // initialise the drawing state
 void init(RenderTarget t);
 
+RenderTarget current_target();
+
+inline auto surface() { return current_target() == RenderTarget::surface; }
+inline auto overlay() { return current_target() == RenderTarget::overlay; }
+
+// Sets whether the buffer swap is enabled (for testing)
+void swap(bool enabled);
+
 // suface start drawing and finish drawing functions
 void start();
 void finish();
@@ -47,12 +55,14 @@ void filled_rect(Color c, math::Vector p1, math::Vector p2);
 // draw an outlined rectangle from p1 to p2
 void outlined_rect(Color c, math::Vector p1, math::Vector p2);
 
+void line(Color c, math::Vector p1, math::Vector p2);
+
 using FontHandle = u32;
 
 // Register a font
-FontHandle register_font(const char *font_name, u32 size);
+FontHandle register_font(const char *file_name, const char *font_name, u32 size);
 
-void text(FontHandle f, Color c, math::Vector p, const char *format, ...);
+void text(FontHandle f, u32 size, Color c, math::Vector p, const char *format, ...);
 
 // TODO: drawing fonts + setting colors
 

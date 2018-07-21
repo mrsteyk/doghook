@@ -205,12 +205,12 @@ public:
             // These all need to be properly thunked
             static auto iconvar_vtable = []() {
                 auto ret = new void *[5];
-                ret[0]   = &set_value_int_thunk;
-                ret[1]   = &set_value_float_thunk;
-                ret[2]   = &set_value_string_thunk;
+                ret[0]   = (void *)&set_value_int_thunk;
+                ret[1]   = (void *)&set_value_float_thunk;
+                ret[2]   = (void *)&set_value_string_thunk;
 
-                ret[3] = &undefined_thunk;
-                ret[4] = &undefined_thunk;
+                ret[3] = (void *)&undefined_thunk;
+                ret[4] = (void *)&undefined_thunk;
 
                 return ret;
             }();

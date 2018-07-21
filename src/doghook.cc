@@ -20,11 +20,12 @@
 #include "hooks/send_datagram.hh"
 
 #include "modules/esp.hh"
+#include "modules/menu.hh"
 #include "modules/misc.hh"
 
 #include "utils/profiler.hh"
 
-static sdk::Convar<bool> doghook_profiling_enabled{"doghook_profiling_enabled", false, nullptr};
+sdk::Convar<bool>        doghook_profiling_enabled{"doghook_profiling_enabled", false, nullptr};
 static sdk::Convar<bool> doghook_unload_now{"doghook_unload_now", false, nullptr};
 
 // Singleton for doing init / deinit of doghook
@@ -34,18 +35,23 @@ extern class Doghook doghook;
 
 class Doghook : public GameSystem {
 public:
-    bool inited = false;
+    bool inited       = false;
+    bool shutdown_now = false;
 
 #if doghook_platform_windows()
     HMODULE doghook_module_handle;
 #endif
 
     static void await_shutdown() {
-        while (!doghook_unload_now) {
+        while (!doghook_unload_now && !doghook.shutdown_now) {
             using namespace std::chrono_literals;
             std::this_thread::sleep_for(1000ms);
             std::this_thread::yield();
         }
+
+        // Not a user called unload - the process is going down anyway so just
+        // Let that happen
+        if (doghook.shutdown_now && !doghook_unload_now) return;
 
 #if doghook_platform_windows()
         // TODO: the CRT should be able to take care of all our hooks as they are all declared
@@ -156,12 +162,14 @@ public:
         sdk::ConvarBase::init_all();
 
         // Setup drawing and paint hook
-        sdk::draw::init(sdk::draw::RenderTarget::surface);
+        // sdk::draw::init(sdk::draw::RenderTarget::overlay);
         paint_hook::init_all();
 
         misc::init_all();
 
         logging::msg("DOGHOOK:tm: :joy: :joy: :jo3: :nice:\nBuild: " __DATE__ " " __TIME__);
+
+        menu::init();
 
         // at this point we are now inited and ready to go!
         inited = true;
@@ -176,6 +184,7 @@ public:
     }
 
     void shutdown() override {
+        shutdown_now = true;
         paint_hook::shutdown_all();
     }
 

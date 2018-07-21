@@ -1,6 +1,7 @@
 require("premake_modules/export-compile-commands")
 require("premake_modules/cmake")
 
+
 workspace "doghook"
     configurations { "Debug", "Release" }
     platforms { "x32" }
@@ -14,14 +15,17 @@ workspace "doghook"
 
     filter "platforms:x32"
         architecture "x32"
+    filter {}
 
-    filter "system:windows"
-        cppdialect "C++17"
+    cppdialect "C++17"
+
     filter "system:linux"
-        buildoptions "-std=c++2a"
+        toolset "clang"
+        --toolset "gcc"
+    filter "system:windows"
+        toolset "msc-v141"
     filter {}
         
-
     filter "configurations:Debug"
         defines { "DEBUG", "_DEBUG" }
         optimize "Off"
@@ -38,19 +42,14 @@ workspace "doghook"
         defines { "NDEBUG" }
         optimize "Full"
         symbols "Off"
-        flags {"LinkTimeOptimization"}
+        --flags {"LinkTimeOptimization"}
         floatingpoint "Fast"
         vectorextensions "AVX"
-
     filter {}
 
-    project "doghook"
-        filter "system:linux"
-            toolset "clang"
-        filter "system:windows"
-            toolset "msc-v141"
-        filter {}
+    require "oxide/import"
 
+    project "doghook"
         kind "SharedLib"
         language "C++"
         targetdir "bin/%{cfg.buildcfg}"
@@ -59,8 +58,25 @@ workspace "doghook"
             pchheader "src/precompiled.hh"
         filter "system:windows"
             pchheader "precompiled.hh"
-        
         filter {}
+
+        --[[
+        filter{"configurations:Debug"}
+            libdirs{"oxide/bin/Debug/"}
+        filter{"configurations:Release"}
+            libdirs{"oxide/bin/Release"}
+        filter{}
+
+        links{"oxide"}
+        ]]--
+
+
+        filter {"system:linux"}
+            links{"X11", "Xfixes"}
+        filter {}
+
+        includedirs{"oxide/include"}
+        links{"oxide"}
 
         pchsource "src/precompiled.cc"
 

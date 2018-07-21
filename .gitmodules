@@ -1,3 +1,6 @@
 [submodule "premake_modules"]
 	path = premake_modules
 	url = https://github.com/josh33901/premake-export-compile-commands
+[submodule "oxide"]
+	path = oxide
+	url = https://github.com/josh33901/Oxide.git

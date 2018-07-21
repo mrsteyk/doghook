@@ -116,22 +116,30 @@ public:
 enum { backtrack_max_players = 33 };
 
 // Conversion from ticks -> indexes (using rolling array)
-// and entity_index -> index (subtract 1 as world is eindex 0)
 
 auto tick_to_index(u32 tick) { return tick % backtrack::max_ticks; }
+
+// Entites start at index 1 (World is 0)
 auto entity_index_to_array_index(u32 index) { return index - 1; }
 
 std::array<std::array<Record, backtrack::max_ticks>, backtrack_max_players> backtrack_records;
 
+// Get the record track (/ record) for an entity (at a tick)
 auto &record_track(u32 index) { return backtrack_records[index]; }
 auto &record(u32 index, u32 tick) { return record_track(index)[tick_to_index(tick)]; }
 
+// Convenience to get the current data for an entity
+// current_tick is updated in create_move_pre_predict
 u32   current_tick = 0;
 auto &current_record(u32 index) { return record(index, current_tick); }
 
 // Players that have been moved this tick and need restoring
 std::vector<sdk::Player *> players_to_restore;
 
+// Handle extended backtrack range using sequence shifting
+Convar<float> doghook_backtrack_latency{"doghook_backtrack_latency", 0, 0, 1, nullptr};
+
+// Sequence record
 struct sequence {
     u32   in_state;
     u32   out_state;
@@ -140,10 +148,9 @@ struct sequence {
     float cur_time;
 };
 
+// Recent sequences
 std::deque<sequence> sequences;
 u32                  last_incoming_sequence;
-
-Convar<float> doghook_backtrack_latency{"doghook_backtrack_latency", 0, 0, 1, nullptr};
 
 void add_latency_to_netchannel(NetChannel *c) {
     float current_time = iface::globals->realtime;
@@ -168,8 +175,7 @@ void update_incoming_sequences() {
         sequences.push_front({c->in_reliable_state(), c->out_reliable_state(), c->in_sequence(), c->out_sequence(), iface::globals->realtime});
     }
 
-    if (sequences.size() > 2048)
-        sequences.pop_back();
+    if (sequences.size() > 2048) sequences.pop_back();
 }
 
 auto latency_outgoing    = 0.0f;
@@ -308,7 +314,7 @@ bool backtrack_player_to_tick(sdk::Player *p, u32 tick, bool set_alive, bool res
 
     auto &r = record(array_index, tick);
 
-    if (set_alive) p->life_state() = r.life_state;
+    // if (set_alive) p->life_state() = r.life_state;
 
     if (!restoring) players_to_restore.push_back(p);
 
@@ -342,6 +348,8 @@ u32 hitboxes_for_player(sdk::Player *p, u32 tick, sdk::PlayerHitboxes &hitboxes)
 
     return r.max_hitboxes;
 }
+
+void update_incoming_sequences();
 
 // Get new information about each player
 void create_move_pre_predict(sdk::UserCmd *cmd) {
@@ -481,15 +489,14 @@ void create_move(sdk::UserCmd *cmd) {
 }
 
 void restore_all_players() {
-    for (auto &p : players_to_restore)
-        backtrack_player_to_tick(p, current_tick, true, true);
+    profiler_profile_function();
+
+    for (auto &p : players_to_restore) backtrack_player_to_tick(p, current_tick, true, true);
 
     players_to_restore.clear();
 }
 
 void create_move_finish(sdk::UserCmd *cmd) {
-    profiler_profile_function();
-
     // Cleanup from whatever has been done
     restore_all_players();
 }
@@ -528,7 +535,7 @@ void RewindState::to_tick(u32 t) {
 
             if (!success) {
                 // Player isnt valid this tick...
-                // TODO: Set hitboxes to invalid here...
+                // TODO: Set hitboxes to something invalid here...
             }
         }
     }

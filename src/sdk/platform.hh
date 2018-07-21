@@ -47,6 +47,8 @@
 #endif
 // clang-format on
 
+#undef linux
+
 namespace doghook_platform {
 inline constexpr bool windows() { return doghook_platform_windows(); }
 inline constexpr bool linux() { return doghook_platform_linux(); }
