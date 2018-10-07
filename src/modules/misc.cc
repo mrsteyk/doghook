@@ -60,14 +60,14 @@ Netvar local_angles{"DT_BasePlayer", "pl", "deadflag"};
 void init_all() {
     for (auto c : sdk::ConvarWrapper::get_range()) {
         auto flags = c.flags();
-        flags &= ~FCVAR_CHEAT;
-        flags &= ~FCVAR_DEVELOPMENTONLY;
-        flags &= ~FCVAR_PROTECTED;
-        flags &= ~FCVAR_SPONLY;
-        flags &= ~FCVAR_CHEAT;
-        flags &= ~FCVAR_REPLICATED;
-        flags &= ~FCVAR_NOT_CONNECTED;
-        flags &= ~FCVAR_HIDDEN;
+        flags &= ~(FCVAR_CHEAT |
+                   FCVAR_DEVELOPMENTONLY |
+                   FCVAR_PROTECTED |
+                   FCVAR_SPONLY |
+                   FCVAR_CHEAT |
+                   FCVAR_REPLICATED |
+                   FCVAR_NOT_CONNECTED |
+                   FCVAR_HIDDEN);
 
         c.set_flags(flags);
     }

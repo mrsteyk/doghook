@@ -160,5 +160,5 @@ enum player_controls {
 };
 
 // TODO: mb add enumerated key array
-// ToDo: make seperate convar type for keys
+// TODO: make seperate convar type for keys
 } // namespace sdk

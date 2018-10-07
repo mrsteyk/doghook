@@ -178,8 +178,8 @@ public:
     }
 
     // Call the original function
-    // Only pass the return value as a template param as the args
-    // will be automatically infered from what you pass to the function
+    // Only pass the return value as a template param.
+    // as the arg will be automatically infered from what you pass to the function
     template <typename ret, typename... Args>
     auto call_original(Args... args) {
 #if doghook_platform_linux()

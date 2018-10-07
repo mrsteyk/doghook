@@ -81,21 +81,33 @@ public:
         IFace<sdk::Client>::set_from_interface("client", "VClient");
         IFace<sdk::Engine>::set_from_interface("engine", "VEngineClient");
         IFace<sdk::EntList>::set_from_interface("client", "VClientEntityList");
+        IFace<sdk::Cvar>::set_from_interface("vstdlib", "VEngineCvar");
+        IFace<sdk::ModelInfo>::set_from_interface("engine", "VModelInfoClient");
+        IFace<sdk::Trace>::set_from_interface("engine", "EngineTraceClient");
+        IFace<sdk::DebugOverlay>::set_from_interface("engine", "VDebugOverlay");
+        IFace<sdk::GameMovement>::set_from_interface("client", "GameMovement");
+        IFace<sdk::Prediction>::set_from_interface("client", "VClientPrediction");
+        IFace<sdk::InputSystem>::set_from_interface("inputsystem", "InputSystemVersion");
 
-        if constexpr (doghook_platform::windows())
+        if constexpr (doghook_platform::windows()) {
             IFace<sdk::Input>::set_from_pointer(**reinterpret_cast<sdk::Input ***>(
                 vfunc::get_func<u8 *>(sdk::iface::client, 15, 0) + 0x2));
-        else if constexpr (doghook_platform::linux())
-            IFace<sdk::Input>::set_from_pointer(**reinterpret_cast<sdk::Input ***>(
-                vfunc::get_func<u8 *>(sdk::iface::client, 15, 0) + 0x1));
 
-        IFace<sdk::Cvar>::set_from_interface("vstdlib", "VEngineCvar");
-
-        if constexpr (doghook_platform::windows())
             IFace<sdk::ClientMode>::set_from_pointer(
                 *signature::find_pattern<sdk::ClientMode **>(
                     "client", "B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 83 C4 04 C7 05", 1));
-        else if constexpr (doghook_platform::linux()) {
+
+            auto globals_real_address = (u32)*signature::find_pattern<sdk::Globals **>("engine", "A1 ? ? ? ? 8B 11 68", 8);
+            IFace<sdk::Globals>::set_from_pointer((sdk::Globals *)globals_real_address);
+
+            IFace<sdk::MoveHelper>::set_from_pointer(
+                *signature::find_pattern<sdk::MoveHelper **>(
+                    "client", "8B 0D ? ? ? ? 8B 01 FF 50 28 56", 2));
+
+        } else if constexpr (doghook_platform::linux()) {
+            IFace<sdk::Input>::set_from_pointer(**reinterpret_cast<sdk::Input ***>(
+                vfunc::get_func<u8 *>(sdk::iface::client, 15, 0) + 0x1));
+
             // ClientMode is a magic static. So getting a sig for it is difficult (conflicts with all other magic statics)
             // So we are going to do some multistage shit in order to retrieve it
             auto outer_function = signature::find_pattern<void *>("client", "55 89 E5 83 EC 18 E8 ? ? ? ? A3 ? ? ? ? E8", 6);
@@ -106,38 +118,19 @@ public:
 
             IFace<sdk::ClientMode>::set_from_pointer(*reinterpret_cast<sdk::ClientMode **>(inner_function + 10));
             assert(sdk::iface::client_mode);
-        }
 
-        IFace<sdk::ModelInfo>::set_from_interface("engine", "VModelInfoClient");
-        IFace<sdk::Trace>::set_from_interface("engine", "EngineTraceClient");
-        IFace<sdk::DebugOverlay>::set_from_interface("engine", "VDebugOverlay");
+            auto globals_real_address = (u32) * *signature::find_pattern<sdk::Globals ***>("client", "8B 15 ? ? ? ? F3 0F 10 88 D0 08 00 00", 2);
+
+            IFace<sdk::Globals>::set_from_pointer((sdk::Globals *)globals_real_address);
+
+            IFace<sdk::MoveHelper>::set_from_pointer(nullptr);
+        }
 
 #if 0
         IFace<sdk::PlayerInfoManager>::set_from_interface("server", "PlayerInfoManager");
         iface::sdk::Globals>::set_from_pointer(IFace<sdk::PlayerInfoManager->globals());
         auto globals_server_address = (u32)iface::sdk::Globals.get();
 #endif
-
-        if constexpr (doghook_platform::windows()) {
-            auto globals_real_address = (u32)*signature::find_pattern<sdk::Globals **>("engine", "A1 ? ? ? ? 8B 11 68", 8);
-            IFace<sdk::Globals>::set_from_pointer((sdk::Globals *)globals_real_address);
-        } else if constexpr (doghook_platform::linux()) {
-            auto globals_real_address = (u32) * *signature::find_pattern<sdk::Globals ***>("client", "8B 15 ? ? ? ? F3 0F 10 88 D0 08 00 00", 2);
-
-            IFace<sdk::Globals>::set_from_pointer((sdk::Globals *)globals_real_address);
-        }
-
-        IFace<sdk::GameMovement>::set_from_interface("client", "GameMovement");
-        IFace<sdk::Prediction>::set_from_interface("client", "VClientPrediction");
-
-        if constexpr (doghook_platform::windows())
-            IFace<sdk::MoveHelper>::set_from_pointer(
-                *signature::find_pattern<sdk::MoveHelper **>(
-                    "client", "8B 0D ? ? ? ? 8B 01 FF 50 28 56", 2));
-        else if constexpr (doghook_platform::linux())
-            IFace<sdk::MoveHelper>::set_from_pointer(nullptr);
-
-        IFace<sdk::InputSystem>::set_from_interface("inputsystem", "InputSystemVersion");
 
         inited = true;
     }

@@ -141,8 +141,9 @@ Convar<float> doghook_backtrack_latency{"doghook_backtrack_latency", 0, 0, 1, nu
 
 // Sequence record
 struct sequence {
-    u32   in_state;
-    u32   out_state;
+    u32 in_state;
+    u32 out_state;
+
     u32   in_sequence;
     u32   out_sequence;
     float cur_time;
@@ -274,16 +275,8 @@ static bool restore_player_to_record(sdk::Player *p, const Record &r) {
 
     // This offset already seems to account for the + 4 needed...
     static auto hitbox_bone_cache_handle_offset = *signature::find_pattern<u32 *>("client", "FF B6 ? ? ? ? E8 ? ? ? ? 8B F8 83 C4 04 85 FF 74 47", 2);
-
-    auto hitbox_bone_cache_handle = p->get<u32>(hitbox_bone_cache_handle_offset);
-    if (hitbox_bone_cache_handle == 0) return true;
-
-    static auto studio_get_bone_cache = signature::find_pattern<GetBoneCacheFn>("client", "55 8B EC 83 EC 20 56 6A 01 68 ? ? ? ? 68", 0);
-    BoneCache * bone_cache            = studio_get_bone_cache(hitbox_bone_cache_handle);
-
-    static auto bone_cache_update_bones = signature::find_pattern<BoneCache_UpdateBonesFn>("client", "55 8B EC 83 EC 08 56 8B F1 33 D2", 0);
-
-    if (bone_cache != nullptr) bone_cache_update_bones(bone_cache, r.hitboxes.bone_to_world, 128, iface::globals->curtime);
+    static auto studio_get_bone_cache           = signature::find_pattern<GetBoneCacheFn>("client", "55 8B EC 83 EC 20 56 6A 01 68 ? ? ? ? 68", 0);
+    static auto bone_cache_update_bones         = signature::find_pattern<BoneCache_UpdateBonesFn>("client", "55 8B EC 83 EC 08 56 8B F1 33 D2", 0);
 
 #else
     // 8B 86 ? ? ? ? 89 04 24 E8 ? ? ? ? 85 C0 89 C3 74 48 -> hitbox_bone_cache_handle_offset
@@ -291,17 +284,16 @@ static bool restore_player_to_record(sdk::Player *p, const Record &r) {
     // 55 89 E5 57 31 FF 56 53 83 EC 1C 8B 5D 08 0F B7 53 10  -> UpdateBoneCache
 
     static auto hitbox_bone_cache_handle_offset = *signature::find_pattern<u32 *>("client", "8B 86 ? ? ? ? 89 04 24 E8 ? ? ? ? 85 C0 89 C3 74 48", 2);
+    static auto studio_get_bone_cache           = signature::find_pattern<GetBoneCacheFn>("client", "55 89 E5 56 53 BB ? ? ? ? 83 EC 50 C7 45 D8", 0);
+    static auto bone_cache_update_bones         = signature::find_pattern<BoneCache_UpdateBonesFn>("client", "55 89 E5 57 31 FF 56 53 83 EC 1C 8B 5D 08 0F B7 53 10", 0);
+#endif
 
     auto hitbox_bone_cache_handle = p->get<u32>(hitbox_bone_cache_handle_offset);
     if (hitbox_bone_cache_handle == 0) return true;
 
-    static auto studio_get_bone_cache = signature::find_pattern<GetBoneCacheFn>("client", "55 89 E5 56 53 BB ? ? ? ? 83 EC 50 C7 45 D8", 0);
-    BoneCache * bone_cache            = studio_get_bone_cache(hitbox_bone_cache_handle);
+    BoneCache *bone_cache = studio_get_bone_cache(hitbox_bone_cache_handle);
 
-    static auto bone_cache_update_bones = signature::find_pattern<BoneCache_UpdateBonesFn>("client", "55 89 E5 57 31 FF 56 53 83 EC 1C 8B 5D 08 0F B7 53 10", 0);
     if (bone_cache != nullptr) bone_cache_update_bones(bone_cache, r.hitboxes.bone_to_world, 128, iface::globals->curtime);
-
-#endif
 
     return true;
 }
@@ -460,7 +452,7 @@ void create_move(sdk::UserCmd *cmd) {
 
                 iface::overlay->add_box_overlay(r.hitboxes.origin[0], {-2, -2, -2}, {2, 2, 2}, {0, 0, 0}, 0, 255, 0, 100, 0);
 
-#if 0
+#if 0 && _DEBUG
                 auto &hitboxes = r.hitboxes;
                 for (u32 i = 0; i < r.max_hitboxes; i++) {
 
@@ -469,7 +461,7 @@ void create_move(sdk::UserCmd *cmd) {
                     auto g = (int)(255.0f * hullcolor[j].y);
                     auto b = (int)(255.0f * hullcolor[j].z);
 
-                    iface::DebugOverlay->add_box_overlay(hitboxes.origin[i], hitboxes.raw_min[i], hitboxes.raw_max[i], hitboxes.rotation[i], r, g, b, 100, 0);
+                    iface::overlay->add_box_overlay(hitboxes.origin[i], hitboxes.raw_min[i], hitboxes.raw_max[i], hitboxes.rotation[i], r, g, b, 100, 0);
 
                     //math::Vector origin;
                     //math::Vector angles;
@@ -479,7 +471,7 @@ void create_move(sdk::UserCmd *cmd) {
                     //g = 255;
                     //b = 0;
 
-                    //iface::DebugOverlay->add_box_overlay(origin, hitboxes.raw_min[i], hitboxes.raw_max[i], angles, r, g, b, 100, 0);
+                    //iface::overlay->add_box_overlay(origin, hitboxes.raw_min[i], hitboxes.raw_max[i], angles, r, g, b, 100, 0);
                 }
 #endif
             }

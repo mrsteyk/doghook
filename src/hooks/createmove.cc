@@ -64,10 +64,6 @@ static inline auto local_player_prediction(Player *local, UserCmd *cmd) {
     iface::globals->curtime   = old_cur_time;
     iface::globals->frametime = old_frame_time;
     iface::globals->tickcount = old_tick_count;
-
-    // TODO: if you do this then make sure to change the fov time calculation
-    // in aimbot::try_autoshoot!!
-    //local->tick_base() += 1;
 }
 
 std::unique_ptr<hooks::HookFunction<ClientMode, 0>> create_move_hook;
@@ -85,8 +81,7 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
     __asm mov ebp_address, ebp;
     send_packet_ptr = reinterpret_cast<bool *>(***(uptr ***)ebp_address - 1);
 #else
-    // kotm's method
-    uintptr_t **fp;
+    uptr **fp;
     __asm__("mov %%ebp, %0"
             : "=r"(fp));
     send_packet_ptr = reinterpret_cast<bool *>(**fp - 8);
