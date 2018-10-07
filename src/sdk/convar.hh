@@ -16,6 +16,8 @@
 // Convar types into their own templated class so that you can static_cast
 // to it once you know what you are dealing with.
 
+// TODO: there is no reason why there should be any virtual functions here!
+
 namespace sdk {
 class ConCommandBase;
 class IConVar;

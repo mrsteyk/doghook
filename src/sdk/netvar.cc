@@ -43,24 +43,25 @@ uptr Netvar::Tree::find_offset(std::vector<const char *> t) {
     auto nodes = &prop_tree;
 
     for (auto &name : t) {
-
         auto old_nodes = nodes;
 
         auto end = nodes->end();
         for (auto it = nodes->begin(); it != end; ++it) {
             auto p = *it;
 
-            if (strcmp(name, p.first) == 0) {
-                nodes = &p.second->children;
-                if (p.second->p != nullptr)
-                    total += p.second->p->offset;
+            auto [node_name, child_node] = p;
+
+            if (strcmp(name, node_name) == 0) {
+                nodes = &child_node->children;
+                if (child_node->p != nullptr)
+                    total += child_node->p->offset;
                 break;
             }
         }
 
         if (nodes == old_nodes) {
             // TODO:
-            //logging::msg("[Netvar] Unable to find '%s'", name);
+            // logging::msg("[Netvar] Unable to find '%s'", name);
         }
     }
 

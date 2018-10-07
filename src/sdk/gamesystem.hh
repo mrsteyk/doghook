@@ -121,7 +121,7 @@ public:
     virtual void post_render() override {}
 };
 
-// TODO: GameSystem could be in a namespace...
+// TODO: GameSystem could be in a namespace (not directly required for the rtti hack)...
 
 class GameSystem : public CBaseGameSystemPerFrame {
     GameSystem *next;

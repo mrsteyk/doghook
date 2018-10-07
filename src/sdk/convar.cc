@@ -8,7 +8,7 @@
 #include "log.hh"
 #include "sdk.hh"
 
-// implementation of a source convar
+// implementation of a source engine convar
 namespace sdk {
 
 // Helper to prevent crashes if Cvar isnt initied properly yet

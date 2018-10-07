@@ -9,7 +9,6 @@ namespace sdk {
 class Netvar {
 
     class Tree {
-
         struct Node;
         using TreeNode = std::vector<std::pair<const char *, std::shared_ptr<Node>>>;
 

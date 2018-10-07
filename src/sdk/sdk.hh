@@ -515,6 +515,7 @@ public:
     }
 };
 
+// Wrappers around the IFace<type> system: iface::<type>
 namespace iface {
 extern IFace<Client>            client;
 extern IFace<ClientMode>        client_mode;
@@ -532,6 +533,24 @@ extern IFace<MoveHelper>        move_helper;
 extern IFace<GameMovement>      game_movement;
 extern IFace<EngineVgui>        engine_vgui;
 extern IFace<InputSystem>       input_system;
+
+// TODO: update to use type aliases instead of extern vars
+// using client        = IFace<Client>;
+// using client_mode   = IFace<ClientMode>;
+// using cvar          = IFace<Cvar>;
+// using engine        = IFace<Engine>;
+// using engine_vgui   = IFace<EngineVgui>;
+// using ent_list      = IFace<EntList>;
+// using game_movement = IFace<GameMovement>;
+// using globals       = IFace<Globals>;
+// using info_manager  = IFace<PlayerInfoManager>;
+// using input         = IFace<Input>;
+// using input_system  = IFace<InputSystem>;
+// using model_info    = IFace<ModelInfo>;
+// using move_helper   = IFace<MoveHelper>;
+// using overlay       = IFace<DebugOverlay>;
+// using prediction    = IFace<Prediction>;
+// using trace         = IFace<Trace>;
 } // namespace iface
 
 } // namespace sdk
