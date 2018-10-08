@@ -28,7 +28,7 @@ public:
 // So that we can update the value for next time.
 
 // This macro is required as inline variables have multiple constructors / destructors per compilation unit.
-// Since this calss relies on consctruction and destruction we can only create the checkers in 1 compilation unit.
+// Since this calls relies on consctruction and destruction we can only create the checkers in 1 compilation unit.
 #if defined(_DEBUG) && defined(PLACE_CHECKER)
 #define ID(name, value)                          \
     enum { name = value };                       \
@@ -43,13 +43,13 @@ public:
 #endif
 
 // Put ids here
-ID(CFuncRespawnRoomVisualizer, 64);
-ID(CTFMedigunShield, 230);
 ID(CFuncAreaPortalWindow, 55);
+ID(CFuncRespawnRoomVisualizer, 64);
+ID(CTFFlareGun, 208);
+ID(CTFMedigunShield, 230);
 ID(CTFPlayer, 246);
 ID(CTFRevolver, 285);
 ID(CTFSniperRifle, 306);
-ID(CTFFlareGun, 208);
 
 #undef ID
 
