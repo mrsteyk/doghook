@@ -307,6 +307,7 @@ bool backtrack_player_to_tick(sdk::Player *p, u32 tick, bool set_alive, bool res
     auto &r = record(array_index, tick);
 
     // if (set_alive) p->life_state() = r.life_state;
+    if (r.alive == false) return false;
 
     if (!restoring) players_to_restore.push_back(p);
 
