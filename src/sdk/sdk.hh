@@ -104,6 +104,10 @@ public:
     auto &in_sequence() { return get<u32, 12>(); }
     auto &in_reliable_state() { return get<u32, 24>(); }
     auto &out_reliable_state() { return get<u32, 20>(); }
+
+    bool send_net_msg(void *msg, bool bForceReliable = false, bool bVoice = false) {
+        return_virtual_func(send_net_msg, 40, 0, 0, 0, msg, bForceReliable, bVoice);
+    }
 };
 
 class Globals {
@@ -266,12 +270,66 @@ public:
 
         auto cmd_array = *reinterpret_cast<UserCmd **>(reinterpret_cast<u8 *>(this) + array_offset);
 
-        return &cmd_array[sequence_number % 90];
+        return (UserCmd *)((u8 *)cmd_array + (sequence_number % 90) * 68);
+    }
+
+    UserCmd *get_user_cmd_array() {
+        // Look at above queued_packets_offset for more info
+        static u32 array_offset = []() {
+            if constexpr (doghook_platform::windows()) {
+                return *signature::find_pattern<u32 *>("client", "8B 87 ? ? ? ? 8B CA", 2);
+            } else if constexpr (doghook_platform::linux()) {
+                return 0;
+            } else if constexpr (doghook_platform::osx()) {
+                return 0;
+            }
+        }();
+        // this should not be 0
+        assert(array_offset != 0);
+
+        auto cmd_array = *reinterpret_cast<UserCmd **>(reinterpret_cast<u8 *>(this) + array_offset);
+
+        return cmd_array;
     }
 
     class VerifiedCmd *get_verified_user_cmd(u32 sequence_number) {
         // 03 B7 ? ? ? ? 8D 04 88
-        return nullptr;
+        // Look at above queued_packets_offset for more info
+        static u32 array_offset = []() {
+            if constexpr (doghook_platform::windows()) {
+                return *signature::find_pattern<u32 *>("client", "03 B7 ? ? ? ? 8D 04 88", 2);
+            } else if constexpr (doghook_platform::linux()) {
+                return 0;
+            } else if constexpr (doghook_platform::osx()) {
+                return 0;
+            }
+        }();
+        // this should not be 0
+        assert(array_offset != 0);
+
+        auto cmd_array = *reinterpret_cast<VerifiedCmd **>(reinterpret_cast<u8 *>(this) + array_offset);
+
+        return (VerifiedCmd *)((u8 *)cmd_array + ((sequence_number % 90) << 6));
+    }
+
+    class VerifiedCmd *get_verified_user_cmd_array() {
+        // 03 B7 ? ? ? ? 8D 04 88
+        // Look at above queued_packets_offset for more info
+        static u32 array_offset = []() {
+            if constexpr (doghook_platform::windows()) {
+                return *signature::find_pattern<u32 *>("client", "03 B7 ? ? ? ? 8D 04 88", 2);
+            } else if constexpr (doghook_platform::linux()) {
+                return 0;
+            } else if constexpr (doghook_platform::osx()) {
+                return 0;
+            }
+        }();
+        // this should not be 0
+        assert(array_offset != 0);
+
+        auto cmd_array = *reinterpret_cast<VerifiedCmd **>(reinterpret_cast<u8 *>(this) + array_offset);
+
+        return cmd_array;
     }
 };
 
@@ -552,5 +610,40 @@ extern IFace<InputSystem>       input_system;
 // using prediction    = IFace<Prediction>;
 // using trace         = IFace<Trace>;
 } // namespace iface
+
+// STK's
+struct bf_write {
+    unsigned int m_pData;
+    int          m_nDataBytes;
+    int          m_nDataBits;
+    int          m_iCurBit;
+    bool         m_bOverflow;
+    bool         m_bAssertOnOverflow;
+    const char * pDebugName;
+};
+
+using bf_read = bf_write;
+
+static void bf_write__ctor(u32 *thisptr) { // use .m_pData (oof its just cuz its off=0x0)
+    *thisptr              = 0;
+    thisptr[1]            = 0;
+    thisptr[2]            = -1;
+    thisptr[3]            = 0;
+    *((u16 *)thisptr + 8) = 256;
+    thisptr[5]            = 0;
+}
+
+static void bf_write__start_writing(bf_write *thisptr, char *pData, int nBytes, int nStartBit, unsigned int nBits) {
+    int v5; // eax
+
+    thisptr->m_pData      = (unsigned int)pData;
+    v5                    = nBits;
+    thisptr->m_nDataBytes = nBytes & 0xFFFFFFFC;
+    thisptr->m_bOverflow  = 0;
+    if (nBits == 0xFFFFFFFF)
+        v5 = 8 * (nBytes & 0xFFFFFFFC);
+    thisptr->m_nDataBits = v5;
+    thisptr->m_iCurBit   = nStartBit;
+}
 
 } // namespace sdk

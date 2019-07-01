@@ -5,13 +5,14 @@
 #include <hooks/createmove.hh>
 
 #include <sdk/convar.hh>
+#include <sdk/player.hh>
 #include <sdk/sdk.hh>
 
 using namespace sdk;
 
 namespace anti_aim {
 
-Convar<bool> doghook_antiaim_enabled{"doghook_antiaim_enabled", true, nullptr};
+Convar<bool> doghook_antiaim_enabled{"doghook_antiaim_enabled", false, nullptr};
 
 Convar<float> doghook_antiaim_real_angle{"doghook_antiaim_real_angle", 90, -1000, 1000, nullptr};
 Convar<float> doghook_antiaim_fake_angle{"doghook_antiaim_fake_angle", -90, -1000, 1000, nullptr};
@@ -54,6 +55,9 @@ inline static auto fix_movement_for_new_angles(const math::Vector &movement, con
 
 void create_move(sdk::UserCmd *cmd) {
     auto send_packet = create_move::send_packet();
+
+    //auto local_player = Player::local();
+    //*(u32 *)((u8 *)local_player + 2120) = 0;
 
     if (!(cmd->buttons & IN_ATTACK) && doghook_antiaim_enabled) {
         auto old_angles = cmd->viewangles;

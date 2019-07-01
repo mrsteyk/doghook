@@ -5,6 +5,8 @@
 #include "sdk.hh"
 #include "weapon.hh"
 
+#include "vfunc.hh"
+
 using namespace sdk;
 
 auto  next_primary_attack = Netvar("DT_BaseCombatWeapon", "LocalActiveWeaponData", "m_flNextPrimaryAttack");
@@ -29,4 +31,12 @@ u32  Weapon::clip1() {
 Entity *Weapon::owner() {
     // TODO:
     return nullptr;
+}
+
+bool Weapon::do_swing_trace(trace::TraceResult *trace) {
+    return_virtual_func(do_swing_trace, 453, 523, 0, 0, trace); // look for "set_disguise_on_backstab" and look for 2 arg func that has if for '== 1'
+}
+
+int Weapon::get_swing_range() {
+    return_virtual_func(get_swing_range, 451, 521, 0, 0); // look for "is_a_sword" (3rd XRef rn) and 72, 48, 128 constants
 }

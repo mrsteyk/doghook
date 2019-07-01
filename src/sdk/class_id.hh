@@ -50,6 +50,8 @@ ID(CTFMedigunShield, 230);
 ID(CTFPlayer, 246);
 ID(CTFRevolver, 285);
 ID(CTFSniperRifle, 306);
+ID(CTFKnife, 225);
+ID(CTEFireBullets, 151);
 
 #undef ID
 

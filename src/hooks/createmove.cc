@@ -8,6 +8,7 @@
 
 #include "modules/aimbot.hh"
 #include "modules/anti_aim.hh"
+#include "modules/auto_backstab.hh"
 #include "modules/backtrack.hh"
 #include "modules/lagexploit.hh"
 #include "modules/misc.hh"
@@ -19,6 +20,8 @@
 #if doghook_platform_windows()
 #include <intrin.h>
 #endif
+
+sdk::UserCmd *last_cmd;
 
 using namespace sdk;
 
@@ -90,7 +93,11 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
     auto local_player = Player::local();
     assert(local_player);
 
+    //bool retval = create_move_hook->call_original<bool>(sample_framerate, user_cmd);
     create_move_hook->call_original<void>(sample_framerate, user_cmd);
+
+    if (user_cmd)
+        last_cmd = user_cmd;
 
     // Do create_move_pre_predict()
     {
@@ -115,7 +122,8 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
 
         aimbot::create_move(user_cmd);
         backtrack::create_move(user_cmd);
-        lagexploit::create_move(user_cmd);
+        //lagexploit::create_move(user_cmd);
+        //auto_backstab::create_move(user_cmd);
         anti_aim::create_move(user_cmd);
         misc::create_move(user_cmd);
     }
@@ -124,6 +132,7 @@ bool hooked_create_move(void *instance, float sample_framerate, UserCmd *user_cm
         backtrack::create_move_finish(user_cmd);
     }
 
+    //return retval;
     return false;
 }
 

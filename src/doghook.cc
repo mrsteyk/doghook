@@ -17,7 +17,10 @@
 
 #include "hooks/createmove.hh"
 #include "hooks/engine_vgui.hh"
+#include "hooks/get_team.hh"
+#include "hooks/process_temp_entites.hh"
 #include "hooks/send_datagram.hh"
+#include "hooks/write_ucmd2buf.hh"
 
 #include "modules/esp.hh"
 #include "modules/menu.hh"
@@ -194,6 +197,9 @@ public:
         // Do level init here
         create_move::level_init();
         send_datagram::level_init();
+        process_temp_entities::level_init();
+        write_ucmd2buf::level_init();
+        get_team::level_init();
     }
     void level_shutdown_pre_clear_steam_api_context() override { logging::msg("level_shutdown_pre_clear_steam_api_context"); }
     void level_shutdown_pre_entity() override {
@@ -202,6 +208,9 @@ public:
         // Do level_shutdown here
         create_move::level_shutdown();
         send_datagram::level_shutdown();
+        process_temp_entities::level_shutdown();
+        write_ucmd2buf::level_shutdown();
+        get_team::level_shutdown();
     }
     void level_shutdown_post_entity() override { logging::msg("level_shutdown_post_entity"); }
 

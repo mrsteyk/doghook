@@ -23,7 +23,7 @@ workspace "doghook"
         toolset "clang"
         --toolset "gcc"
     filter "system:windows"
-        toolset "msc-v141"
+        toolset "msc-v142"
     filter {}
         
     filter "configurations:Debug"

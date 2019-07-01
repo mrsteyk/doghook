@@ -8,7 +8,10 @@
 #include "sdk/player.hh"
 #include "utils/hex.hh"
 
+#include "sdk/log.hh"
 #include "utils/profiler.hh"
+
+#include "sdk/sdk.hh"
 
 using namespace sdk;
 
@@ -86,6 +89,17 @@ void paint() {
 
     auto local_player      = Player::local();
     auto local_player_team = local_player->team();
+
+    /*if (local_player) { // not really needed
+        static auto last_tickbase = *(i32 *)((u8 *)local_player + 0x114c);
+        //draw::text(f, 15, {255, 255, 255, 255}, {0, 100, 0}, "max_clients: %i", iface::globals->max_clients);
+        //draw::text(f, 15, {255, 255, 255, 255}, {0, 115, 0}, "   tickbase: %i", *(i32 *)((u8 *)local_player + 0x114c));
+        //if (*(i32 *)((u8 *)local_player + 0x114c) != last_tickbase && *(i32 *)((u8 *)local_player + 0x114c) != last_tickbase+1) {
+        //    logging::msg("TICK BASE CHANGED! was: %i | now: %i", last_tickbase, *(i32 *)((u8 *)local_player + 0x114c));
+        //    last_tickbase = *(i32 *)((u8 *)local_player + 0x114c);
+		//}
+        last_tickbase = *(i32 *)((u8 *)local_player + 0x114c);
+    }*/
 
     auto friendly_color = draw::Color(hex::dword(doghook_esp_friendly.to_string()));
     auto enemy_color    = draw::Color(hex::dword(doghook_esp_enemy.to_string()));
